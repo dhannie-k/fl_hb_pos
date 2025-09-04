@@ -7,26 +7,38 @@ class DashboardService {
   DashboardService(this.repository);
 
   Future<DashboardStats> getDashboardStats() async {
-    // Compose the dashboard stats by calling individual repository methods
-    final results = await Future.wait([
-      repository.getTotalSalesCurrentMonth(),
-      repository.getNewOrdersCount(),
-      repository.getPendingOrdersCount(),
-      repository.getTopSellingItems(5),
-      repository.getLowStockItems(10),
-      repository.getDuePaymentsSummary(),
-    ]);
+    try {
+      // Execute all repository calls in parallel
+      final results = await Future.wait([
+        repository.getTotalSalesCurrentMonth(),
+        repository.getNewOrdersCount(), 
+        repository.getPendingOrdersCount(),
+        repository.getTopSellingItems(5),
+        repository.getLowStockItems(10),
+        repository.getDuePaymentsSummary(),
+      ]);
 
-    final duePayments = results[5] as (int, double);
+      // Extract results with proper types
+      final totalSales = results[0] as double;
+      final newOrders = results[1] as int;
+      final pendingOrders = results[2] as int;
+      final topItems = results[3] as List<TopItem>;
+      final lowStockItems = results[4] as List<LowStockItem>;
+      final duePayments = results[5] as Map<String, dynamic>;
 
-    return DashboardStats(
-      totalSales: results[0] as double,
-      newOrders: results[1] as int,
-      pendingOrders: results[2] as int,
-      topItems: results[3] as List<TopItem>,
-      lowStockItems: results[4] as List<LowStockItem>,
-      duePaymentsCount: duePayments.$1,
-      duePaymentsAmount: duePayments.$2,
-    );
+      return DashboardStats(
+        totalSales: totalSales,
+        newOrders: newOrders,
+        pendingOrders: pendingOrders,
+        topItems: topItems,
+        lowStockItems: lowStockItems,
+        duePaymentsCount: duePayments['due_count'] ?? 0,
+        duePaymentsAmount: (duePayments['total_due'] ?? 0.0).toDouble(),
+      );
+    } catch (e) {
+      // Log the error for debugging
+      print('Error in getDashboardStats: $e');
+      rethrow;
+    }
   }
 }

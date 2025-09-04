@@ -311,6 +311,224 @@ VALUES
 ('Racks', 14),
 ('Hooks', 14);
 
+-- Add invoice status enum
+CREATE TYPE invoice_status AS ENUM (
+    'draft',
+    'sent',
+    'overdue', 
+    'paid',
+    'cancelled'
+);
+
+-- Add payment status enum  
+CREATE TYPE payment_status AS ENUM (
+    'pending',
+    'completed',
+    'failed',
+    'cancelled'
+);
+
+-- Invoice table
+CREATE TABLE invoices (
+    id SERIAL PRIMARY KEY,
+    invoice_number VARCHAR(50) UNIQUE NOT NULL,
+    sales_order_id INTEGER NOT NULL REFERENCES sales_order(id) ON DELETE CASCADE,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    
+    -- Invoice details
+    invoice_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    due_date DATE NOT NULL,
+    
+    -- Financial information
+    subtotal NUMERIC(18, 2) NOT NULL CHECK (subtotal >= 0),
+    tax_amount NUMERIC(18, 2) DEFAULT 0 CHECK (tax_amount >= 0),
+    discount_amount NUMERIC(18, 2) DEFAULT 0 CHECK (discount_amount >= 0),
+    total_amount NUMERIC(18, 2) NOT NULL CHECK (total_amount >= 0),
+    
+    -- Status and tracking
+    status invoice_status DEFAULT 'draft',
+    notes TEXT,
+    
+    -- Audit fields
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id),
+    
+    -- Constraints
+    CONSTRAINT check_due_date CHECK (due_date >= invoice_date),
+    CONSTRAINT check_total_calculation CHECK (total_amount = subtotal + tax_amount - discount_amount)
+);
+
+-- Invoice items table (for detailed line items)
+CREATE TABLE invoice_items (
+    id SERIAL PRIMARY KEY,
+    invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    sales_order_item_id INTEGER NOT NULL REFERENCES sales_order_items(id) ON DELETE CASCADE,
+    product_item_id INTEGER NOT NULL REFERENCES product_items(id) ON DELETE CASCADE,
+    
+    -- Item details
+    description TEXT NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_price NUMERIC(18, 2) NOT NULL CHECK (unit_price >= 0),
+    line_total NUMERIC(18, 2) NOT NULL CHECK (line_total >= 0),
+    
+    -- Constraints
+    CONSTRAINT check_line_total CHECK (line_total = quantity * unit_price)
+);
+
+-- Payments table
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    payment_number VARCHAR(50) UNIQUE NOT NULL,
+    invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    
+    -- Payment details
+    payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    amount NUMERIC(18, 2) NOT NULL CHECK (amount > 0),
+    payment_method payment_method NOT NULL,
+    
+    -- Bank transfer details (optional)
+    bank_reference VARCHAR(100), -- Bank transfer reference number
+    bank_account VARCHAR(100),   -- Sender's bank account info
+    transfer_note TEXT,          -- Additional transfer notes
+    
+    -- Status and tracking
+    status payment_status DEFAULT 'completed',
+    notes TEXT,
+    
+    -- Audit fields
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id)
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_invoices_sales_order_id ON invoices(sales_order_id);
+CREATE INDEX idx_invoices_customer_id ON invoices(customer_id);
+CREATE INDEX idx_invoices_status ON invoices(status);
+CREATE INDEX idx_invoices_due_date ON invoices(due_date);
+CREATE INDEX idx_invoices_invoice_date ON invoices(invoice_date);
+
+CREATE INDEX idx_invoice_items_invoice_id ON invoice_items(invoice_id);
+CREATE INDEX idx_invoice_items_product_item_id ON invoice_items(product_item_id);
+
+CREATE INDEX idx_payments_invoice_id ON payments(invoice_id);
+CREATE INDEX idx_payments_payment_date ON payments(payment_date);
+CREATE INDEX idx_payments_status ON payments(status);
+
+-- Create function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create triggers for updated_at
+CREATE TRIGGER update_invoices_updated_at 
+    BEFORE UPDATE ON invoices 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_payments_updated_at 
+    BEFORE UPDATE ON payments 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Create the missing RPC functions for dashboard
+CREATE OR REPLACE FUNCTION get_due_payments_summary()
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT json_build_object(
+        'due_count', COALESCE(COUNT(*), 0),
+        'total_due', COALESCE(SUM(total_amount), 0)
+    ) INTO result
+    FROM invoices 
+    WHERE status IN ('sent', 'overdue') 
+      AND due_date <= CURRENT_DATE;
+      
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create function for top selling items
+CREATE OR REPLACE FUNCTION get_top_selling_items(item_limit INTEGER DEFAULT 5)
+RETURNS TABLE (
+    product_id INTEGER,
+    name TEXT,
+    specification TEXT,
+    total_sold BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.name::TEXT,
+        pi.specification::TEXT,
+        SUM(soi.quantity_delivered) as total_sold
+    FROM sales_order_items soi
+    INNER JOIN product_items pi ON soi.product_item_id = pi.id
+    INNER JOIN products p ON pi.product_id = p.id
+    INNER JOIN sales_order so ON soi.order_id = so.id
+    WHERE so.status = 'delivered'
+      AND soi.quantity_delivered > 0
+    GROUP BY p.id, p.name, pi.specification
+    ORDER BY total_sold DESC
+    LIMIT item_limit;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to generate invoice number
+CREATE OR REPLACE FUNCTION generate_invoice_number()
+RETURNS TEXT AS $$
+DECLARE
+    current_year TEXT;
+    current_month TEXT;
+    sequence_num INTEGER;
+    invoice_num TEXT;
+BEGIN
+    current_year := TO_CHAR(CURRENT_DATE, 'YYYY');
+    current_month := TO_CHAR(CURRENT_DATE, 'MM');
+    
+    -- Get next sequence number for current month
+    SELECT COALESCE(
+        MAX(CAST(SUBSTRING(invoice_number FROM '[0-9]+$') AS INTEGER)), 0
+    ) + 1 INTO sequence_num
+    FROM invoices 
+    WHERE invoice_number LIKE 'INV-' || current_year || current_month || '%';
+    
+    invoice_num := 'INV-' || current_year || current_month || '-' || LPAD(sequence_num::TEXT, 4, '0');
+    
+    RETURN invoice_num;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to generate payment number
+CREATE OR REPLACE FUNCTION generate_payment_number()
+RETURNS TEXT AS $$
+DECLARE
+    current_year TEXT;
+    current_month TEXT;
+    sequence_num INTEGER;
+    payment_num TEXT;
+BEGIN
+    current_year := TO_CHAR(CURRENT_DATE, 'YYYY');
+    current_month := TO_CHAR(CURRENT_DATE, 'MM');
+    
+    -- Get next sequence number for current month
+    SELECT COALESCE(
+        MAX(CAST(SUBSTRING(payment_number FROM '[0-9]+$') AS INTEGER)), 0
+    ) + 1 INTO sequence_num
+    FROM payments 
+    WHERE payment_number LIKE 'PAY-' || current_year || current_month || '%';
+    
+    payment_num := 'PAY-' || current_year || current_month || '-' || LPAD(sequence_num::TEXT, 4, '0');
+    
+    RETURN payment_num;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Insert sample supplier
 INSERT INTO suppliers(name) VALUES('Unnamed');
 

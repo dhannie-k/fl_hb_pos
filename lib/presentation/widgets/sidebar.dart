@@ -18,30 +18,16 @@ class Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: Duration(milliseconds: 300),
-      width: isExpanded ? 250 : 80,
+      width: isExpanded ? 250 : 70,
       child: Container(
         color: Color(0xFF2D3748),
         child: Column(
           children: [
             Container(
-              height: 80,
-              padding: EdgeInsets.all(16),
-              child: Row(
+              height: 135,
+              padding: EdgeInsets.all(12),
+              child: Column(
                 children: [
-                  Icon(Icons.store, color: Colors.white, size: 32),
-                  if (isExpanded) ...[
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'HIDUP BARU',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
                   IconButton(
                     icon: Icon(
                       isExpanded ? Icons.menu_open : Icons.menu,
@@ -49,6 +35,22 @@ class Sidebar extends StatelessWidget {
                     ),
                     onPressed: onToggle,
                   ),
+                  Icon(Icons.store, color: Colors.white, size: 32),
+                  if (isExpanded) ...[
+                    Flexible( // Changed from Expanded to Flexible to prevent overflow
+                      child: Text(
+                        'HIDUP BARU',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16, // Reduced font size
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis, // Handle overflow gracefully
+                      ),
+                    ),
+                  ],
+                  SizedBox(width: 8), // Add some spacing
+                  
                 ],
               ),
             ),
@@ -85,7 +87,7 @@ class Sidebar extends StatelessWidget {
               ),
             ),
             Container(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(0),
               child: _buildNavItem(
                 icon: Icons.settings,
                 title: 'Settings',
@@ -106,7 +108,7 @@ class Sidebar extends StatelessWidget {
     final isSelected = selectedIndex == index;
     
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      margin: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       child: Material(
         color: isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
@@ -125,7 +127,7 @@ class Sidebar extends StatelessWidget {
                 ),
                 if (isExpanded) ...[
                   SizedBox(width: 16),
-                  Expanded(
+                  Flexible( // Changed from Expanded to Flexible
                     child: Text(
                       title,
                       style: TextStyle(
@@ -133,6 +135,7 @@ class Sidebar extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
+                      overflow: TextOverflow.ellipsis, // Handle long text
                     ),
                   ),
                 ],
