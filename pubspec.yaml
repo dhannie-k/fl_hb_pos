@@ -1,0 +1,39 @@
+name: hb_pos_inv
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.0-75.1.beta
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # State Management
+  flutter_bloc: ^9.1.1
+  
+  # Database
+  supabase_flutter: ^2.10.0
+  
+  # Routing
+  go_router: ^16.2.1
+  
+  # UI Components
+  cupertino_icons: ^1.0.2
+  
+  # Utilities
+  intl: ^0.20.2
+
+  # Data handling
+  equatable: ^2.0.7
+  
+  # Charts (for reports)
+  fl_chart: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
