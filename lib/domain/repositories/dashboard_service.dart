@@ -36,8 +36,8 @@ class DashboardService {
         duePaymentsAmount: (duePayments['total_due'] ?? 0.0).toDouble(),
       );
     } catch (e) {
-      // Log the error for debugging
-      print('Error in getDashboardStats: $e');
+      // In production, you'd use a proper logging framework like logger package
+      // For now, we'll let the error bubble up to be handled by the BLoC
       rethrow;
     }
   }

@@ -4,11 +4,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/supabase_config.dart';
 import 'core/constans/app_colors.dart';
 import 'presentation/pages/main_layout.dart';
+
+// Dashboard imports
 import 'presentation/bloc/dashboard/dashboard_bloc.dart';
 import 'presentation/bloc/dashboard/dashboard_event.dart';
 import 'data/repositories/dashboard_repository_impl.dart';
 import 'data/datasources/supabase_datasource.dart';
 import 'domain/repositories/dashboard_service.dart';
+
+// Category imports
+import 'presentation/bloc/category/category_bloc.dart';
+import 'data/repositories/category_repository_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +32,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Create datasource instance
+    final supabaseDatasource = SupabaseDatasource();
+    
     return MaterialApp(
       title: 'Hidup Baru POS',
       debugShowCheckedModeBanner: false,
@@ -62,19 +71,64 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
+        // Add dialog theme
+        dialogTheme: DialogThemeData(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        // Add input decoration theme
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.accent, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.error),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: AppColors.error, width: 2),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        // Add snackbar theme
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
       ),
       home: MultiBlocProvider(
         providers: [
+          // Dashboard BLoC
           BlocProvider(
             create: (context) => DashboardBloc(
               DashboardService(
-                // ← Create service
-                DashboardRepositoryImpl(
-                  SupabaseDatasource(),
-                ), // ← Pass repository to service
+                DashboardRepositoryImpl(supabaseDatasource),
               ),
             )..add(LoadDashboard()),
           ),
+          
+          // Category BLoC
+          BlocProvider(
+            create: (context) => CategoryBloc(
+              CategoryRepositoryImpl(supabaseDatasource),
+            ),
+          ),
+          
+          // TODO: Add more BLoCs here as we build them
+          // ProductBloc, InventoryBloc, SalesBloc, etc.
         ],
         child: MainLayout(),
       ),
