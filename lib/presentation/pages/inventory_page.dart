@@ -30,27 +30,58 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Inventory Management'),
+        title: Text(
+          'Inventory',
+          style: TextStyle(fontSize: 20), // Reduced font size
+        ),
         automaticallyImplyLeading: false,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.accent,
-          tabs: [
-            Tab(
-              icon: Icon(Icons.warehouse),
-              text: 'Stock',
-            ),
-            Tab(
-              icon: Icon(Icons.inventory_2),
-              text: 'Products',
-            ),
-            Tab(
-              icon: Icon(Icons.category),
-              text: 'Categories',
-            ),
-          ],
+        toolbarHeight: 48, // Reduced toolbar height
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(40), // Reduced tab bar height
+          child: TabBar(
+            controller: _tabController,
+            labelColor: AppColors.primary,
+            unselectedLabelColor: AppColors.textSecondary,
+            indicatorColor: AppColors.accent,
+            indicatorWeight: 2,
+            labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600), // Smaller font
+            unselectedLabelStyle: TextStyle(fontSize: 14),
+            tabs: [
+              Tab(
+                height: 40, // Reduced tab height
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.warehouse, size: 16), // Smaller icon
+                    SizedBox(width: 4),
+                    Text('Stock'),
+                  ],
+                ),
+              ),
+              Tab(
+                height: 40,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.inventory_2, size: 16),
+                    SizedBox(width: 4),
+                    Text('Products'),
+                  ],
+                ),
+              ),
+              Tab(
+                height: 40,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.category, size: 16),
+                    SizedBox(width: 4),
+                    Text('Categories'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       body: TabBarView(

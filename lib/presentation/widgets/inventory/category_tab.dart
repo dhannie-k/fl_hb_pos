@@ -20,6 +20,7 @@ class _CategoryTabState extends State<CategoryTab> {
   
   int _currentPage = 1;
   final int _itemsPerPage = 10;
+  bool _isFormExpanded = false; // Add this to control form visibility
   
   @override
   void initState() {
@@ -48,6 +49,10 @@ class _CategoryTabState extends State<CategoryTab> {
           // Clear form after successful operation
           _nameController.clear();
           _selectedParentCategory = null;
+          // Auto-collapse form after success
+          setState(() {
+            _isFormExpanded = false;
+          });
         } else if (state is CategoryError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -57,162 +62,236 @@ class _CategoryTabState extends State<CategoryTab> {
           );
         }
       },
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Add Category Form
-            _buildAddCategoryForm(),
-            SizedBox(height: 32),
-            
-            // Categories List Header
-            _buildListHeader(),
-            SizedBox(height: 16),
-            
-            // Categories List
-            Expanded(
-              child: _buildCategoriesList(),
-            ),
-            
-            // Pagination
-            _buildPagination(),
-          ],
-        ),
+      child: Column(
+        children: [
+          // Compact Add Category Section
+          _buildCompactAddSection(),
+          
+          // Categories List Header
+          _buildListHeader(),
+          
+          // Categories List - Takes remaining space
+          Expanded(
+            child: _buildCategoriesList(),
+          ),
+          
+          // Pagination
+          _buildPagination(),
+        ],
       ),
     );
   }
-  
-  Widget _buildAddCategoryForm() {
+
+  Widget _buildCompactAddSection() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      child: Column(
+        children: [
+          // Always visible: Add button or collapsed form
+          if (!_isFormExpanded) 
+            _buildCollapsedAddButton()
+          else
+            _buildExpandedAddForm(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollapsedAddButton() {
+    return Row(
+      children: [
+        Icon(Icons.category, size: 20, color: AppColors.accent),
+        SizedBox(width: 8),
+        Text(
+          'Categories',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        Spacer(),
+        ElevatedButton.icon(
+          onPressed: () {
+            setState(() {
+              _isFormExpanded = true;
+            });
+          },
+          icon: Icon(Icons.add, size: 16),
+          label: Text('Add Category'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.accent,
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            minimumSize: Size(0, 32),
+            textStyle: TextStyle(fontSize: 13),
+          ),
+        ),
+        SizedBox(width: 8),
+        IconButton(
+          onPressed: () {
+            context.read<CategoryBloc>().add(RefreshCategories());
+          },
+          icon: Icon(Icons.refresh, size: 18),
+          tooltip: 'Refresh Categories',
+          padding: EdgeInsets.all(4),
+          constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExpandedAddForm() {
     return BlocBuilder<CategoryBloc, CategoryState>(
       builder: (context, state) {
         final isLoading = state is CategoryCreating;
         final parentCategories = _getParentCategoriesFromState(state);
         
-        return Card(
-          elevation: 2,
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
                 children: [
+                  Icon(Icons.add_circle_outline, size: 18, color: AppColors.accent),
+                  SizedBox(width: 8),
                   Text(
                     'Add New Category',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  SizedBox(height: 16),
-                  
-                  Row(
-                    children: [
-                      // Category Name Field
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: _nameController,
-                          enabled: !isLoading,
-                          decoration: InputDecoration(
-                            labelText: 'Category Name',
-                            hintText: 'Enter category name',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.accent),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.error),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Category name is required';
-                            }
-                            if (value.trim().length < 2) {
-                              return 'Category name must be at least 2 characters';
-                            }
-                            if (value.trim().length > 50) {
-                              return 'Category name must be less than 50 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      
-                      SizedBox(width: 16),
-                      
-                      // Parent Category Dropdown
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<Category>(
-                          initialValue: _selectedParentCategory,
-                          decoration: InputDecoration(
-                            labelText: 'Parent Category (Optional)',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.accent),
-                            ),
-                          ),
-                          items: [
-                            DropdownMenuItem<Category>(
-                              value: null,
-                              child: Text(
-                                'None (Top Level)',
-                                style: TextStyle(color: AppColors.textSecondary),
-                              ),
-                            ),
-                            ...parentCategories.map((category) {
-                              return DropdownMenuItem<Category>(
-                                value: category,
-                                child: Text(category.name),
-                              );
-                            }),
-                          ],
-                          onChanged: isLoading ? null : (Category? value) {
-                            setState(() {
-                              _selectedParentCategory = value;
-                            });
-                          },
-                        ),
-                      ),
-                      
-                      SizedBox(width: 16),
-                      
-                      // Add Button
-                      ElevatedButton.icon(
-                        onPressed: isLoading ? null : _addCategory,
-                        icon: isLoading 
-                          ? SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(Icons.add),
-                        label: Text(isLoading ? 'Adding...' : 'Add Category'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ],
+                  Spacer(),
+                  IconButton(
+                    onPressed: isLoading ? null : () {
+                      setState(() {
+                        _isFormExpanded = false;
+                        _nameController.clear();
+                        _selectedParentCategory = null;
+                      });
+                    },
+                    icon: Icon(Icons.close, size: 18),
+                    padding: EdgeInsets.all(4),
+                    constraints: BoxConstraints(minWidth: 24, minHeight: 24),
                   ),
                 ],
               ),
-            ),
+              
+              SizedBox(height: 12),
+              
+              // Form fields in a more compact layout
+              Row(
+                children: [
+                  // Category Name Field
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: _nameController,
+                      enabled: !isLoading,
+                      decoration: InputDecoration(
+                        labelText: 'Category Name',
+                        hintText: 'Enter name',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(color: AppColors.accent),
+                        ),
+                      ),
+                      style: TextStyle(fontSize: 14),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Required';
+                        }
+                        if (value.trim().length < 2) {
+                          return 'Min 2 characters';
+                        }
+                        if (value.trim().length > 50) {
+                          return 'Max 50 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  
+                  SizedBox(width: 12),
+                  
+                  // Parent Category Dropdown
+                  Expanded(
+                    flex: 3,
+                    child: DropdownButtonFormField<Category>(
+                      initialValue: _selectedParentCategory,
+                      decoration: InputDecoration(
+                        labelText: 'Parent (Optional)',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(color: AppColors.accent),
+                        ),
+                      ),
+                      style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                      items: [
+                        DropdownMenuItem<Category>(
+                          value: null,
+                          child: Text(
+                            'None (Top Level)',
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          ),
+                        ),
+                        ...parentCategories.map((category) {
+                          return DropdownMenuItem<Category>(
+                            value: category,
+                            child: Text(category.name, style: TextStyle(fontSize: 13)),
+                          );
+                        }),
+                      ],
+                      onChanged: isLoading ? null : (Category? value) {
+                        setState(() {
+                          _selectedParentCategory = value;
+                        });
+                      },
+                    ),
+                  ),
+                  
+                  SizedBox(width: 12),
+                  
+                  // Add Button
+                  ElevatedButton.icon(
+                    onPressed: isLoading ? null : _addCategory,
+                    icon: isLoading 
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(Icons.add, size: 16),
+                    label: Text(isLoading ? 'Adding...' : 'Add'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      minimumSize: Size(0, 36),
+                      textStyle: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              
+              SizedBox(height: 8),
+            ],
           ),
         );
       },
@@ -220,42 +299,35 @@ class _CategoryTabState extends State<CategoryTab> {
   }
 
   Widget _buildListHeader() {
-    return BlocBuilder<CategoryBloc, CategoryState>(
-      builder: (context, state) {
-        final categories = _getCategoriesFromState(state);
-        
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Categories',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      child: BlocBuilder<CategoryBloc, CategoryState>(
+        builder: (context, state) {
+          final categories = _getCategoriesFromState(state);
+          
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'All Categories (${categories.length})',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-            Row(
-              children: [
-                Text(
-                  'Total: ${categories.length}',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                SizedBox(width: 16),
-                IconButton(
-                  onPressed: () {
-                    context.read<CategoryBloc>().add(RefreshCategories());
-                  },
-                  icon: Icon(Icons.refresh),
-                  tooltip: 'Refresh Categories',
-                ),
-              ],
-            ),
-          ],
-        );
-      },
+              if (_isFormExpanded) // Only show refresh when form is collapsed
+                SizedBox()
+              else
+                SizedBox(), // Refresh button is in the collapsed header
+            ],
+          );
+        },
+      ),
     );
   }
   
@@ -278,15 +350,17 @@ class _CategoryTabState extends State<CategoryTab> {
         }
         
         return Card(
-          elevation: 2,
+          margin: EdgeInsets.symmetric(horizontal: 16),
+          elevation: 1,
           child: Column(
             children: [
-              // Table Header
+              // Compact Table Header
               _buildTableHeader(),
               
-              // Table Body
+              // Table Body - Scrollable
               Expanded(
                 child: ListView.builder(
+                  padding: EdgeInsets.zero,
                   itemCount: paginatedCategories.length,
                   itemBuilder: (context, index) {
                     final category = paginatedCategories[index];
@@ -306,11 +380,11 @@ class _CategoryTabState extends State<CategoryTab> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: AppColors.accent),
-          SizedBox(height: 16),
+          CircularProgressIndicator(color: AppColors.accent, strokeWidth: 3),
+          SizedBox(height: 12),
           Text(
             'Loading categories...',
-            style: TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
         ],
       ),
@@ -319,83 +393,92 @@ class _CategoryTabState extends State<CategoryTab> {
 
   Widget _buildErrorState(String message) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: AppColors.error,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Error loading categories',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: AppColors.error,
             ),
-          ),
-          SizedBox(height: 8),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary),
+            SizedBox(height: 12),
+            Text(
+              'Error loading categories',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-          SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              context.read<CategoryBloc>().add(LoadCategories());
-            },
-            icon: Icon(Icons.refresh),
-            label: Text('Retry'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: Colors.white,
+            SizedBox(height: 6),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                context.read<CategoryBloc>().add(LoadCategories());
+              },
+              icon: Icon(Icons.refresh, size: 16),
+              label: Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                textStyle: TextStyle(fontSize: 13),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.category_outlined,
-            size: 64,
-            color: AppColors.textMuted,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'No Categories Yet',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.category_outlined,
+              size: 48,
+              color: AppColors.textMuted,
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Add your first category using the form above',
-            style: TextStyle(
-              color: AppColors.textSecondary,
+            SizedBox(height: 12),
+            Text(
+              'No Categories Yet',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 6),
+            Text(
+              'Add your first category using the form above',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTableHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
@@ -409,6 +492,7 @@ class _CategoryTabState extends State<CategoryTab> {
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
+                fontSize: 13,
               ),
             ),
           ),
@@ -419,21 +503,23 @@ class _CategoryTabState extends State<CategoryTab> {
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
+                fontSize: 13,
               ),
             ),
           ),
           Expanded(
             flex: 1,
             child: Text(
-              'Sub-categories',
+              'Sub-cats',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
+                fontSize: 13,
               ),
             ),
           ),
-          SizedBox(width: 100), // Space for actions
+          SizedBox(width: 60), // Space for actions
         ],
       ),
     );
@@ -448,10 +534,10 @@ class _CategoryTabState extends State<CategoryTab> {
         final isDeleting = state is CategoryDeleting;
         
         return Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: AppColors.divider, width: 1),
+              bottom: BorderSide(color: AppColors.divider, width: 0.5),
             ),
             color: isDeleting ? AppColors.error.withValues(alpha: 0.1) : null,
           ),
@@ -462,13 +548,13 @@ class _CategoryTabState extends State<CategoryTab> {
                 child: Row(
                   children: [
                     if (category.parentId != null) ...[
-                      SizedBox(width: 20),
+                      SizedBox(width: 16),
                       Icon(
                         Icons.subdirectory_arrow_right,
-                        size: 16,
+                        size: 14,
                         color: AppColors.textSecondary,
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 6),
                     ],
                     Expanded(
                       child: Text(
@@ -478,6 +564,7 @@ class _CategoryTabState extends State<CategoryTab> {
                             ? FontWeight.w600 
                             : FontWeight.normal,
                           color: AppColors.textPrimary,
+                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -490,6 +577,7 @@ class _CategoryTabState extends State<CategoryTab> {
                   parentCategory?.name ?? '-',
                   style: TextStyle(
                     color: AppColors.textSecondary,
+                    fontSize: 13,
                   ),
                 ),
               ),
@@ -500,18 +588,19 @@ class _CategoryTabState extends State<CategoryTab> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textSecondary,
+                    fontSize: 13,
                   ),
                 ),
               ),
               SizedBox(
-                width: 100,
+                width: 60,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     if (isDeleting) ...[
                       SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 16,
+                        height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ] else ...[
@@ -522,32 +611,35 @@ class _CategoryTabState extends State<CategoryTab> {
                         itemBuilder: (context) => [
                           PopupMenuItem(
                             value: 'add_product',
+                            height: 36,
                             child: Row(
                               children: [
-                                Icon(Icons.add, size: 18),
+                                Icon(Icons.add, size: 16),
                                 SizedBox(width: 8),
-                                Text('Add Product'),
+                                Text('Add Product', style: TextStyle(fontSize: 13)),
                               ],
                             ),
                           ),
                           PopupMenuItem(
                             value: 'edit',
+                            height: 36,
                             child: Row(
                               children: [
-                                Icon(Icons.edit, size: 18),
+                                Icon(Icons.edit, size: 16),
                                 SizedBox(width: 8),
-                                Text('Edit'),
+                                Text('Edit', style: TextStyle(fontSize: 13)),
                               ],
                             ),
                           ),
-                          if (subCategoriesCount == 0) // Only allow delete if no subcategories
+                          if (subCategoriesCount == 0)
                             PopupMenuItem(
                               value: 'delete',
+                              height: 36,
                               child: Row(
                                 children: [
-                                  Icon(Icons.delete, size: 18, color: AppColors.error),
+                                  Icon(Icons.delete, size: 16, color: AppColors.error),
                                   SizedBox(width: 8),
-                                  Text('Delete', style: TextStyle(color: AppColors.error)),
+                                  Text('Delete', style: TextStyle(color: AppColors.error, fontSize: 13)),
                                 ],
                               ),
                             ),
@@ -555,6 +647,7 @@ class _CategoryTabState extends State<CategoryTab> {
                         child: Icon(
                           Icons.more_vert,
                           color: AppColors.textSecondary,
+                          size: 18,
                         ),
                       ),
                     ],
@@ -576,19 +669,21 @@ class _CategoryTabState extends State<CategoryTab> {
         
         if (totalPages <= 1) return SizedBox();
         
-        return Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
                 onPressed: _currentPage > 1 ? () => _goToPage(_currentPage - 1) : null,
-                icon: Icon(Icons.chevron_left),
+                icon: Icon(Icons.chevron_left, size: 20),
+                padding: EdgeInsets.all(4),
+                constraints: BoxConstraints(minWidth: 32, minHeight: 32),
               ),
               ...List.generate(totalPages, (index) {
                 final pageNumber = index + 1;
                 return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 2),
                   child: TextButton(
                     onPressed: () => _goToPage(pageNumber),
                     style: TextButton.styleFrom(
@@ -598,6 +693,9 @@ class _CategoryTabState extends State<CategoryTab> {
                       foregroundColor: _currentPage == pageNumber 
                         ? Colors.white 
                         : AppColors.textSecondary,
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      minimumSize: Size(32, 28),
+                      textStyle: TextStyle(fontSize: 12),
                     ),
                     child: Text('$pageNumber'),
                   ),
@@ -605,7 +703,9 @@ class _CategoryTabState extends State<CategoryTab> {
               }),
               IconButton(
                 onPressed: _currentPage < totalPages ? () => _goToPage(_currentPage + 1) : null,
-                icon: Icon(Icons.chevron_right),
+                icon: Icon(Icons.chevron_right, size: 20),
+                padding: EdgeInsets.all(4),
+                constraints: BoxConstraints(minWidth: 32, minHeight: 32),
               ),
             ],
           ),
@@ -669,7 +769,6 @@ class _CategoryTabState extends State<CategoryTab> {
   void _handleCategoryAction(String action, Category category) {
     switch (action) {
       case 'add_product':
-        // TODO: Navigate to add product form with category pre-selected
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Navigate to Add Product for ${category.name}')),
         );
@@ -694,8 +793,8 @@ class _CategoryTabState extends State<CategoryTab> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Category'),
-        content: Text('Are you sure you want to delete "${category.name}"?'),
+        title: Text('Delete Category', style: TextStyle(fontSize: 16)),
+        content: Text('Are you sure you want to delete "${category.name}"?', style: TextStyle(fontSize: 14)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -714,7 +813,7 @@ class _CategoryTabState extends State<CategoryTab> {
   }
 }
 
-// Edit Category Dialog Widget
+// Edit Category Dialog Widget (kept simple for space)
 class EditCategoryDialog extends StatefulWidget {
   final Category category;
 
@@ -733,7 +832,6 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.category.name);
-    // We'll set the selected parent after we get the parent categories from BLoC
   }
 
   @override
@@ -749,21 +847,20 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
         final parentCategories = _getParentCategoriesFromState(state);
         final isUpdating = state is CategoryUpdating;
 
-        // Set initial parent category if not set yet
         if (_selectedParentCategory == null && widget.category.parentId != null) {
           try {
             _selectedParentCategory = parentCategories.firstWhere(
               (c) => c.id == widget.category.parentId,
             );
           } catch (e) {
-            // Parent not found, leave as null
+            // Parent not found
           }
         }
 
         return AlertDialog(
-          title: Text('Edit Category'),
+          title: Text('Edit Category', style: TextStyle(fontSize: 16)),
           content: SizedBox(
-            width: 400,
+            width: 350,
             child: Form(
               key: _formKey,
               child: Column(
@@ -774,10 +871,12 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
                     enabled: !isUpdating,
                     decoration: InputDecoration(
                       labelText: 'Category Name',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                     ),
+                    style: TextStyle(fontSize: 14),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Category name is required';
@@ -791,29 +890,31 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
                       return null;
                     },
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 12),
                   DropdownButtonFormField<Category>(
                     initialValue: _selectedParentCategory,
                     decoration: InputDecoration(
                       labelText: 'Parent Category (Optional)',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                     ),
+                    style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
                     items: [
                       DropdownMenuItem<Category>(
                         value: null,
                         child: Text(
                           'None (Top Level)',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                         ),
                       ),
                       ...parentCategories
-                          .where((c) => c.id != widget.category.id) // Can't be parent of itself
+                          .where((c) => c.id != widget.category.id)
                           .map((category) {
                         return DropdownMenuItem<Category>(
                           value: category,
-                          child: Text(category.name),
+                          child: Text(category.name, style: TextStyle(fontSize: 13)),
                         );
                       }),
                     ],
@@ -837,16 +938,19 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                textStyle: TextStyle(fontSize: 13),
               ),
               child: isUpdating 
                 ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : Text('Update'),
             ),
           ],
+          actionsPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         );
       },
     );

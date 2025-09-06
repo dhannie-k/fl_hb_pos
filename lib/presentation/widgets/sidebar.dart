@@ -25,7 +25,7 @@ class Sidebar extends StatelessWidget {
           children: [
             Container(
               height: 135,
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(6),
               child: Column(
                 children: [
                   IconButton(
