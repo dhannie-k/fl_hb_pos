@@ -16,22 +16,25 @@ class CategoryTab extends StatefulWidget {
 class _CategoryTabState extends State<CategoryTab> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _searchController = TextEditingController();
   Category? _selectedParentCategory;
   
   int _currentPage = 1;
-  final int _itemsPerPage = 10;
-  bool _isFormExpanded = false; // Add this to control form visibility
+  int _itemsPerPage = 10;
+  bool _isFormExpanded = false;
+  String _searchQuery = '';
+  final Set<int> _expandedCategoryIds = <int>{}; // Track which categories are expanded
   
   @override
   void initState() {
     super.initState();
-    // Load categories when widget initializes
     context.read<CategoryBloc>().add(LoadCategories());
   }
   
   @override
   void dispose() {
     _nameController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -46,10 +49,8 @@ class _CategoryTabState extends State<CategoryTab> {
               backgroundColor: AppColors.success,
             ),
           );
-          // Clear form after successful operation
           _nameController.clear();
           _selectedParentCategory = null;
-          // Auto-collapse form after success
           setState(() {
             _isFormExpanded = false;
           });
@@ -64,18 +65,9 @@ class _CategoryTabState extends State<CategoryTab> {
       },
       child: Column(
         children: [
-          // Compact Add Category Section
           _buildCompactAddSection(),
-          
-          // Categories List Header
           _buildListHeader(),
-          
-          // Categories List - Takes remaining space
-          Expanded(
-            child: _buildCategoriesList(),
-          ),
-          
-          // Pagination
+          Expanded(child: _buildCategoriesList()),
           _buildPagination(),
         ],
       ),
@@ -91,7 +83,6 @@ class _CategoryTabState extends State<CategoryTab> {
       ),
       child: Column(
         children: [
-          // Always visible: Add button or collapsed form
           if (!_isFormExpanded) 
             _buildCollapsedAddButton()
           else
@@ -156,7 +147,6 @@ class _CategoryTabState extends State<CategoryTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
               Row(
                 children: [
                   Icon(Icons.add_circle_outline, size: 18, color: AppColors.accent),
@@ -184,13 +174,9 @@ class _CategoryTabState extends State<CategoryTab> {
                   ),
                 ],
               ),
-              
               SizedBox(height: 12),
-              
-              // Form fields in a more compact layout
               Row(
                 children: [
-                  // Category Name Field
                   Expanded(
                     flex: 3,
                     child: TextFormField(
@@ -223,10 +209,7 @@ class _CategoryTabState extends State<CategoryTab> {
                       },
                     ),
                   ),
-                  
                   SizedBox(width: 12),
-                  
-                  // Parent Category Dropdown
                   Expanded(
                     flex: 3,
                     child: DropdownButtonFormField<Category>(
@@ -265,10 +248,7 @@ class _CategoryTabState extends State<CategoryTab> {
                       },
                     ),
                   ),
-                  
                   SizedBox(width: 12),
-                  
-                  // Add Button
                   ElevatedButton.icon(
                     onPressed: isLoading ? null : _addCategory,
                     icon: isLoading 
@@ -289,7 +269,6 @@ class _CategoryTabState extends State<CategoryTab> {
                   ),
                 ],
               ),
-              
               SizedBox(height: 8),
             ],
           ),
@@ -307,23 +286,91 @@ class _CategoryTabState extends State<CategoryTab> {
       ),
       child: BlocBuilder<CategoryBloc, CategoryState>(
         builder: (context, state) {
-          final categories = _getCategoriesFromState(state);
+          final allCategories = _getCategoriesFromState(state);
+          final filteredCategories = _getFilteredCategories(allCategories);
+          //final topLevelCategories = _getTopLevelCategories(filteredCategories);
           
           return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'All Categories (${categories.length})',
+                _searchQuery.isEmpty 
+                  ? 'All Categories (${allCategories.length})'
+                  : 'Found (${filteredCategories.length})',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
-              if (_isFormExpanded) // Only show refresh when form is collapsed
-                SizedBox()
-              else
-                SizedBox(), // Refresh button is in the collapsed header
+              Spacer(),
+              
+              // Items per page selector
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: DropdownButton<int>(
+                  value: _itemsPerPage,
+                  underline: SizedBox(),
+                  style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                  items: [5, 10, 20, 50].map((value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text('$value per page'),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _itemsPerPage = value;
+                        _currentPage = 1; // Reset to first page
+                      });
+                    }
+                  },
+                ),
+              ),
+              
+              SizedBox(width: 12),
+              
+              // Search field
+              SizedBox(
+                width: 200,
+                height: 32,
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search categories...',
+                    hintStyle: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    prefixIcon: Icon(Icons.search, size: 16, color: AppColors.textSecondary),
+                    suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          onPressed: _clearSearch,
+                          icon: Icon(Icons.clear, size: 16),
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(minWidth: 24, minHeight: 24),
+                        )
+                      : null,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: AppColors.accent),
+                    ),
+                  ),
+                  style: TextStyle(fontSize: 12),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                      _currentPage = 1; // Reset to first page when searching
+                    });
+                  },
+                ),
+              ),
             ],
           );
         },
@@ -342,11 +389,17 @@ class _CategoryTabState extends State<CategoryTab> {
           return _buildErrorState(state.message);
         }
         
-        final categories = _getCategoriesFromState(state);
-        final paginatedCategories = _getPaginatedCategories(categories);
+        final allCategories = _getCategoriesFromState(state);
+        final filteredCategories = _getFilteredCategories(allCategories);
+        final topLevelCategories = _getTopLevelCategories(filteredCategories);
+        final paginatedTopLevelCategories = _getPaginatedTopLevelCategories(topLevelCategories);
         
-        if (categories.isEmpty) {
+        if (allCategories.isEmpty) {
           return _buildEmptyState();
+        }
+        
+        if (filteredCategories.isEmpty && _searchQuery.isNotEmpty) {
+          return _buildNoSearchResultsState();
         }
         
         return Card(
@@ -354,17 +407,17 @@ class _CategoryTabState extends State<CategoryTab> {
           elevation: 1,
           child: Column(
             children: [
-              // Compact Table Header
               _buildTableHeader(),
-              
-              // Table Body - Scrollable
               Expanded(
                 child: ListView.builder(
                   padding: EdgeInsets.zero,
-                  itemCount: paginatedCategories.length,
+                  itemCount: _calculateTotalVisibleItems(paginatedTopLevelCategories, allCategories),
                   itemBuilder: (context, index) {
-                    final category = paginatedCategories[index];
-                    return _buildCategoryRow(category, categories);
+                    return _buildHierarchicalCategoryItem(
+                      paginatedTopLevelCategories, 
+                      allCategories, 
+                      index
+                    );
                   },
                 ),
               ),
@@ -373,6 +426,44 @@ class _CategoryTabState extends State<CategoryTab> {
         );
       },
     );
+  }
+
+  Widget _buildHierarchicalCategoryItem(
+    List<Category> topLevelCategories, 
+    List<Category> allCategories, 
+    int flatIndex
+  ) {
+    // Calculate which category this flat index corresponds to
+    int currentIndex = 0;
+    
+    for (Category topCategory in topLevelCategories) {
+      if (currentIndex == flatIndex) {
+        return _buildCategoryRow(topCategory, allCategories, 0);
+      }
+      currentIndex++;
+      
+      if (_expandedCategoryIds.contains(topCategory.id)) {
+        final subCategories = _getSubCategories(topCategory.id, allCategories);
+        for (Category subCategory in subCategories) {
+          if (currentIndex == flatIndex) {
+            return _buildCategoryRow(subCategory, allCategories, 1);
+          }
+          currentIndex++;
+        }
+      }
+    }
+    
+    return SizedBox(); // Fallback
+  }
+
+  int _calculateTotalVisibleItems(List<Category> topLevelCategories, List<Category> allCategories) {
+    int count = topLevelCategories.length;
+    for (Category topCategory in topLevelCategories) {
+      if (_expandedCategoryIds.contains(topCategory.id)) {
+        count += _getSubCategories(topCategory.id, allCategories).length;
+      }
+    }
+    return count;
   }
 
   Widget _buildLoadingState() {
@@ -476,6 +567,47 @@ class _CategoryTabState extends State<CategoryTab> {
     );
   }
 
+  Widget _buildNoSearchResultsState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 48,
+              color: AppColors.textMuted,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'No categories found',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'Try adjusting your search query',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+            SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: _clearSearch,
+              icon: Icon(Icons.clear, size: 16),
+              label: Text('Clear Search'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTableHeader() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -519,15 +651,18 @@ class _CategoryTabState extends State<CategoryTab> {
               ),
             ),
           ),
-          SizedBox(width: 60), // Space for actions
+          SizedBox(width: 60),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryRow(Category category, List<Category> allCategories) {
+  Widget _buildCategoryRow(Category category, List<Category> allCategories, int level) {
     final parentCategory = _getParentCategory(category.parentId, allCategories);
-    final subCategoriesCount = _getSubCategoriesCount(category.id, allCategories);
+    final subCategories = _getSubCategories(category.id, allCategories);
+    final subCategoriesCount = subCategories.length;
+    final isExpanded = _expandedCategoryIds.contains(category.id);
+    final hasSubCategories = subCategoriesCount > 0;
     
     return BlocBuilder<CategoryBloc, CategoryState>(
       builder: (context, state) {
@@ -547,20 +682,46 @@ class _CategoryTabState extends State<CategoryTab> {
                 flex: 3,
                 child: Row(
                   children: [
-                    if (category.parentId != null) ...[
-                      SizedBox(width: 16),
+                    // Indentation for hierarchy
+                    SizedBox(width: level * 20.0),
+                    
+                    // Expand/Collapse button for categories with subcategories
+                    if (hasSubCategories && level == 0) ...[
+                      GestureDetector(
+                        onTap: () => _toggleCategoryExpansion(category.id),
+                        child: Icon(
+                          isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                          size: 16,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                    ] else if (level > 0) ...[
                       Icon(
                         Icons.subdirectory_arrow_right,
                         size: 14,
                         color: AppColors.textSecondary,
                       ),
                       SizedBox(width: 6),
+                    ] else if (level == 0) ...[
+                      // Empty space for top-level categories without subcategories
+                      SizedBox(width: 20),
                     ],
+                    
+                    // Category icon
+                    Icon(
+                      level == 0 ? Icons.folder : Icons.label,
+                      size: 14,
+                      color: level == 0 ? AppColors.accent : AppColors.textSecondary,
+                    ),
+                    SizedBox(width: 6),
+                    
+                    // Category name
                     Expanded(
                       child: Text(
                         category.name,
                         style: TextStyle(
-                          fontWeight: category.parentId == null 
+                          fontWeight: level == 0 
                             ? FontWeight.w600 
                             : FontWeight.normal,
                           color: AppColors.textPrimary,
@@ -574,7 +735,7 @@ class _CategoryTabState extends State<CategoryTab> {
               Expanded(
                 flex: 2,
                 child: Text(
-                  parentCategory?.name ?? '-',
+                  parentCategory?.name ?? (level == 0 ? '-' : ''),
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13,
@@ -584,7 +745,7 @@ class _CategoryTabState extends State<CategoryTab> {
               Expanded(
                 flex: 1,
                 child: Text(
-                  '$subCategoriesCount',
+                  level == 0 ? '$subCategoriesCount' : '-',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textSecondary,
@@ -664,8 +825,10 @@ class _CategoryTabState extends State<CategoryTab> {
   Widget _buildPagination() {
     return BlocBuilder<CategoryBloc, CategoryState>(
       builder: (context, state) {
-        final categories = _getCategoriesFromState(state);
-        final totalPages = (categories.length / _itemsPerPage).ceil();
+        final allCategories = _getCategoriesFromState(state);
+        final filteredCategories = _getFilteredCategories(allCategories);
+        final topLevelCategories = _getTopLevelCategories(filteredCategories);
+        final totalPages = (topLevelCategories.length / _itemsPerPage).ceil();
         
         if (totalPages <= 1) return SizedBox();
         
@@ -726,6 +889,33 @@ class _CategoryTabState extends State<CategoryTab> {
     if (state is CategoryOperationSuccess) return state.parentCategories;
     return [];
   }
+
+  List<Category> _getFilteredCategories(List<Category> categories) {
+    if (_searchQuery.isEmpty) return categories;
+    
+    return categories.where((category) {
+      final nameMatch = category.name.toLowerCase().contains(_searchQuery);
+      // You could add more sophisticated search here, like fuzzy search
+      return nameMatch;
+    }).toList();
+  }
+
+  List<Category> _getTopLevelCategories(List<Category> categories) {
+    return categories.where((category) => category.parentId == null).toList();
+  }
+
+  List<Category> _getPaginatedTopLevelCategories(List<Category> topLevelCategories) {
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+    final endIndex = startIndex + _itemsPerPage;
+    return topLevelCategories.sublist(
+      startIndex, 
+      endIndex > topLevelCategories.length ? topLevelCategories.length : endIndex,
+    );
+  }
+
+  List<Category> _getSubCategories(int parentId, List<Category> categories) {
+    return categories.where((category) => category.parentId == parentId).toList();
+  }
   
   Category? _getParentCategory(int? parentId, List<Category> categories) {
     if (parentId == null) return null;
@@ -736,22 +926,27 @@ class _CategoryTabState extends State<CategoryTab> {
     }
   }
   
-  int _getSubCategoriesCount(int categoryId, List<Category> categories) {
-    return categories.where((c) => c.parentId == categoryId).length;
-  }
-  
-  List<Category> _getPaginatedCategories(List<Category> categories) {
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = startIndex + _itemsPerPage;
-    return categories.sublist(
-      startIndex, 
-      endIndex > categories.length ? categories.length : endIndex,
-    );
+  void _toggleCategoryExpansion(int categoryId) {
+    setState(() {
+      if (_expandedCategoryIds.contains(categoryId)) {
+        _expandedCategoryIds.remove(categoryId);
+      } else {
+        _expandedCategoryIds.add(categoryId);
+      }
+    });
   }
   
   void _goToPage(int page) {
     setState(() {
       _currentPage = page;
+    });
+  }
+  
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _currentPage = 1;
     });
   }
   
@@ -813,7 +1008,7 @@ class _CategoryTabState extends State<CategoryTab> {
   }
 }
 
-// Edit Category Dialog Widget (kept simple for space)
+// Edit Category Dialog Widget
 class EditCategoryDialog extends StatefulWidget {
   final Category category;
 
