@@ -28,70 +28,86 @@ class _InventoryPageState extends State<InventoryPage> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Inventory',
-          style: TextStyle(fontSize: 20), // Reduced font size
-        ),
-        automaticallyImplyLeading: false,
-        toolbarHeight: 48, // Reduced toolbar height
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(40), // Reduced tab bar height
-          child: TabBar(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Determine if we're on mobile
+        final isMobile = constraints.maxWidth < 600;
+        
+        return Scaffold(
+          appBar: AppBar(
+            /* title: Text(
+              'Inventory',
+              style: TextStyle(fontSize: isMobile ? 18 : 20),
+            ), */
+            automaticallyImplyLeading: false,
+            toolbarHeight: isMobile ? 24 : 36,
+            bottom: PreferredSize(
+              preferredSize: Size.fromHeight(isMobile ? 36 : 40),
+              child: TabBar(
+                controller: _tabController,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: AppColors.accent,
+                indicatorWeight: 2,
+                labelStyle: TextStyle(
+                  fontSize: isMobile ? 12 : 14, 
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: TextStyle(fontSize: isMobile ? 12 : 14),
+                tabs: [
+                  Tab(
+                    height: isMobile ? 36 : 40,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.warehouse, size: isMobile ? 14 : 16),
+                        if (!isMobile || constraints.maxWidth > 480) ...[
+                          SizedBox(width: 4),
+                          Text('Stock'),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: isMobile ? 36 : 40,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.inventory_2, size: isMobile ? 14 : 16),
+                        if (!isMobile || constraints.maxWidth > 480) ...[
+                          SizedBox(width: 4),
+                          Text('Products'),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    height: isMobile ? 36 : 40,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.category, size: isMobile ? 14 : 16),
+                        if (!isMobile || constraints.maxWidth > 480) ...[
+                          SizedBox(width: 4),
+                          Text('Categories'),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          body: TabBarView(
             controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.accent,
-            indicatorWeight: 2,
-            labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600), // Smaller font
-            unselectedLabelStyle: TextStyle(fontSize: 14),
-            tabs: [
-              Tab(
-                height: 40, // Reduced tab height
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.warehouse, size: 16), // Smaller icon
-                    SizedBox(width: 4),
-                    Text('Stock'),
-                  ],
-                ),
-              ),
-              Tab(
-                height: 40,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.inventory_2, size: 16),
-                    SizedBox(width: 4),
-                    Text('Products'),
-                  ],
-                ),
-              ),
-              Tab(
-                height: 40,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.category, size: 16),
-                    SizedBox(width: 4),
-                    Text('Categories'),
-                  ],
-                ),
-              ),
+            children: [
+              StockTab(),
+              ProductTab(),
+              CategoryTab(),
             ],
           ),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          StockTab(),
-          ProductTab(),
-          CategoryTab(),
-        ],
-      ),
+        );
+      },
     );
   }
 }

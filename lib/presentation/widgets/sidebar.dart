@@ -1,97 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../router/route_paths.dart';
 
 class Sidebar extends StatelessWidget {
-  final bool isExpanded;
-  final int selectedIndex;
-  final VoidCallback onToggle;
-  final ValueChanged<int> onIndexChanged;
-
-  const Sidebar({
-    super.key,
-    required this.isExpanded,
-    required this.selectedIndex,
-    required this.onToggle,
-    required this.onIndexChanged,
-  });
+  const Sidebar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300),
-      width: isExpanded ? 250 : 70,
-      child: Container(
-        color: Color(0xFF2D3748),
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
+    final currentLocation = GoRouterState.of(context).uri.toString(); // Fixed
+    
+    return Container(
+      width: isMobile ? 280 : 250,
+      child: Drawer(
         child: Column(
           children: [
-            Container(
-              height: 135,
-              padding: EdgeInsets.all(6),
-              child: Column(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      isExpanded ? Icons.menu_open : Icons.menu,
-                      color: Colors.white,
-                    ),
-                    onPressed: onToggle,
-                  ),
-                  Icon(Icons.store, color: Colors.white, size: 32),
-                  if (isExpanded) ...[
-                    Flexible( // Changed from Expanded to Flexible to prevent overflow
-                      child: Text(
-                        'HIDUP BARU',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16, // Reduced font size
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis, // Handle overflow gracefully
-                      ),
-                    ),
-                  ],
-                  SizedBox(width: 8), // Add some spacing
-                  
-                ],
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+              child: const Center(
+                child: Text(
+                  'HIDUP BARU',
+                  style: TextStyle(color: Colors.white, fontSize: 20),
+                ),
               ),
             ),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.zero,
+                padding: EdgeInsets.zero, // Add this to prevent extra padding
                 children: [
                   _buildNavItem(
+                    context,
                     icon: Icons.dashboard,
                     title: 'Dashboard',
-                    index: 0,
+                    path: RoutePaths.dashboard,
+                    isActive: currentLocation == RoutePaths.dashboard,
                   ),
                   _buildNavItem(
+                    context,
                     icon: Icons.inventory,
                     title: 'Inventory',
-                    index: 1,
+                    path: RoutePaths.inventory,
+                    isActive: currentLocation.startsWith('/inventory'),
                   ),
-                  _buildNavItem(
-                    icon: Icons.shopping_cart,
-                    title: 'Sales Orders',
-                    index: 2,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.people,
-                    title: 'Customers',
-                    index: 3,
-                  ),
-                  _buildNavItem(
-                    icon: Icons.assessment,
-                    title: 'Reports',
-                    index: 4,
-                  ),
+                  // Add other nav items
                 ],
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.all(0),
-              child: _buildNavItem(
-                icon: Icons.settings,
-                title: 'Settings',
-                index: 5,
               ),
             ),
           ],
@@ -100,49 +54,38 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem({
+  Widget _buildNavItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
-    required int index,
+    required String path,
+    required bool isActive,
   }) {
-    final isSelected = selectedIndex == index;
-    
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      child: Material(
-        color: isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.transparent,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: () => onIndexChanged(index),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            height: 48,
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  color: isSelected ? Colors.blue[300] : Colors.white70,
-                  size: 24,
-                ),
-                if (isExpanded) ...[
-                  SizedBox(width: 16),
-                  Flexible( // Changed from Expanded to Flexible
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        color: isSelected ? Colors.blue[300] : Colors.white70,
-                        fontSize: 16,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                      overflow: TextOverflow.ellipsis, // Handle long text
-                    ),
-                  ),
-                ],
-              ],
-            ),
+        color: isActive ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16), // Fixed padding
+        leading: Icon(
+          icon,
+          color: isActive ? Theme.of(context).primaryColor : null,
+        ),
+        title: Text( // Removed Flexible wrapper - ListTile handles overflow
+          title,
+          style: TextStyle(
+            color: isActive ? Theme.of(context).primaryColor : null,
+            fontWeight: isActive ? FontWeight.w600 : null,
           ),
         ),
+        onTap: () {
+          context.go(path);
+          if (MediaQuery.of(context).size.width < 768) {
+            Navigator.pop(context);
+          }
+        },
       ),
     );
   }

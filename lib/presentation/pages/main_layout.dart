@@ -1,42 +1,48 @@
 import 'package:flutter/material.dart';
+import '../router/app_router.dart';
 import '../widgets/sidebar.dart';
-import 'dashboard_page.dart';
-import 'inventory_page.dart';
-import 'sales_order_page.dart';
+import '../widgets/responisve/bottom_navigation_bar.dart';
 
-class MainLayout extends StatefulWidget {
-  const MainLayout({super.key});
-
-  @override
-  MainLayoutState createState() => MainLayoutState();
-}
-
-class MainLayoutState extends State<MainLayout> {
-  bool isExpanded = true;
-  int selectedIndex = 0;
-
-  final List<Widget> pages = [
-    DashboardPage(),
-    InventoryPage(),
-    SalesOrderPage(),
-  ];
+class MainLayout extends StatelessWidget {
+  final Widget child;
+  
+  const MainLayout({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
+    final pageTitle = AppRouter.getPageTitle(context);
+    
     return Scaffold(
-      body: Row(
-        children: [
-          Sidebar(
-            isExpanded: isExpanded,
-            selectedIndex: selectedIndex,
-            onToggle: () => setState(() => isExpanded = !isExpanded),
-            onIndexChanged: (index) => setState(() => selectedIndex = index),
-          ),
-          Expanded(
-            child: pages[selectedIndex],
-          ),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const Text('HIDUP BARU'),
+            const Icon(Icons.chevron_right, size: 16),
+            const SizedBox(width: 4),
+            Text(pageTitle),
+          ],
+        ),
+        automaticallyImplyLeading: false,
+        toolbarHeight: isMobile ? 56 : 64,
+        actions: [
+          if (isMobile)
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ),
         ],
       ),
+      drawer: isMobile ? const Sidebar() : null,
+      body: Row(
+        children: [
+          if (!isMobile) const Sidebar(),
+          Expanded(child: child),
+        ],
+      ),
+      bottomNavigationBar: isMobile ? const MobileBottomNavBar() : null,
     );
   }
 }

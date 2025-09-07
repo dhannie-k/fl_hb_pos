@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/supabase_config.dart';
 import 'core/constans/app_colors.dart';
-import 'presentation/pages/main_layout.dart';
+import 'presentation/router/app_router.dart';
 
 // Dashboard imports
 import 'presentation/bloc/dashboard/dashboard_bloc.dart';
@@ -35,102 +35,99 @@ class MyApp extends StatelessWidget {
     // Create datasource instance
     final supabaseDatasource = SupabaseDatasource();
     
-    return MaterialApp(
-      title: 'Hidup Baru POS',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.light,
+    return MultiBlocProvider(
+      providers: [
+        // Dashboard BLoC
+        BlocProvider(
+          create: (context) => DashboardBloc(
+            DashboardService(
+              DashboardRepositoryImpl(supabaseDatasource),
+            ),
+          )..add(LoadDashboard()),
         ),
-        scaffoldBackgroundColor: AppColors.background,
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shadowColor: AppColors.cardShadow,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        
+        // Category BLoC
+        BlocProvider(
+          create: (context) => CategoryBloc(
+            CategoryRepositoryImpl(supabaseDatasource),
           ),
         ),
-        appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.surface,
-          foregroundColor: AppColors.textPrimary,
-          elevation: 0,
-          centerTitle: false,
-          titleTextStyle: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
+        
+        // TODO: Add more BLoCs here as we build them
+        // ProductBloc, InventoryBloc, SalesBloc, etc.
+      ],
+      child: MaterialApp.router(
+        title: 'Hidup Baru POS',
+        debugShowCheckedModeBanner: false,
+        routerConfig: AppRouter.router,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppColors.primary,
+            brightness: Brightness.light,
           ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          scaffoldBackgroundColor: AppColors.background,
+          cardTheme: CardThemeData(
+            elevation: 2,
+            shadowColor: AppColors.cardShadow,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          appBarTheme: AppBarTheme(
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.textPrimary,
+            elevation: 0,
+            centerTitle: false,
+            titleTextStyle: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          dialogTheme: DialogThemeData(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.accent, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.error),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.error, width: 2),
+            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          snackBarTheme: SnackBarThemeData(
+            behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
           ),
         ),
-        // Add dialog theme
-        dialogTheme: DialogThemeData(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        // Add input decoration theme
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.accent, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.error),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.error, width: 2),
-          ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        ),
-        // Add snackbar theme
-        snackBarTheme: SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-      home: MultiBlocProvider(
-        providers: [
-          // Dashboard BLoC
-          BlocProvider(
-            create: (context) => DashboardBloc(
-              DashboardService(
-                DashboardRepositoryImpl(supabaseDatasource),
-              ),
-            )..add(LoadDashboard()),
-          ),
-          
-          // Category BLoC
-          BlocProvider(
-            create: (context) => CategoryBloc(
-              CategoryRepositoryImpl(supabaseDatasource),
-            ),
-          ),
-          
-          // TODO: Add more BLoCs here as we build them
-          // ProductBloc, InventoryBloc, SalesBloc, etc.
-        ],
-        child: MainLayout(),
       ),
     );
   }
