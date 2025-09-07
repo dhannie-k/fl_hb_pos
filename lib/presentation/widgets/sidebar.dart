@@ -8,49 +8,132 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
-    final currentLocation = GoRouterState.of(context).uri.toString(); // Fixed
+    final currentLocation = GoRouterState.of(context).uri.toString();
     
-    return Container(
-      width: isMobile ? 280 : 250,
-      child: Drawer(
-        child: Column(
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
-              child: const Center(
-                child: Text(
-                  'HIDUP BARU',
-                  style: TextStyle(color: Colors.white, fontSize: 20),
-                ),
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero, // Add this to prevent extra padding
-                children: [
-                  _buildNavItem(
-                    context,
-                    icon: Icons.dashboard,
-                    title: 'Dashboard',
-                    path: RoutePaths.dashboard,
-                    isActive: currentLocation == RoutePaths.dashboard,
-                  ),
-                  _buildNavItem(
-                    context,
-                    icon: Icons.inventory,
-                    title: 'Inventory',
-                    path: RoutePaths.inventory,
-                    isActive: currentLocation.startsWith('/inventory'),
-                  ),
-                  // Add other nav items
-                ],
-              ),
+    if (isMobile) {
+      // Mobile drawer
+      return Drawer(
+        child: _buildSidebarContent(context, currentLocation, isMobile),
+      );
+    } else {
+      // Desktop/Tablet fixed sidebar
+      return Container(
+        width: 280,
+        decoration: BoxDecoration(
+          color: const Color(0xFF364A63), // Your blue background color
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(2, 0),
             ),
           ],
         ),
-      ),
+        child: _buildSidebarContent(context, currentLocation, isMobile),
+      );
+    }
+  }
+
+  Widget _buildSidebarContent(BuildContext context, String currentLocation, bool isMobile) {
+    return Column(
+      children: [
+        // Header section
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isMobile ? Theme.of(context).primaryColor : const Color(0xFF364A63),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Store icon
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.store,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'HIDUP BARU',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Navigation items
+        Expanded(
+          child: Container(
+            color: isMobile ? null : const Color(0xFF364A63),
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                _buildNavItem(
+                  context,
+                  icon: Icons.dashboard,
+                  title: 'Dashboard',
+                  path: RoutePaths.dashboard,
+                  isActive: currentLocation == RoutePaths.dashboard,
+                  isMobile: isMobile,
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.inventory,
+                  title: 'Inventory',
+                  path: RoutePaths.inventory,
+                  isActive: currentLocation.startsWith('/inventory'),
+                  isMobile: isMobile,
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.shopping_cart,
+                  title: 'Sales Orders',
+                  path: RoutePaths.sales,
+                  isActive: currentLocation.startsWith('/sales'),
+                  isMobile: isMobile,
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.people,
+                  title: 'Customers',
+                  path: RoutePaths.customers,
+                  isActive: currentLocation.startsWith('/customers'),
+                  isMobile: isMobile,
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.bar_chart,
+                  title: 'Reports',
+                  path: RoutePaths.reports,
+                  isActive: currentLocation.startsWith('/reports'),
+                  isMobile: isMobile,
+                ),
+                const Divider(color: Colors.white24, height: 32),
+                _buildNavItem(
+                  context,
+                  icon: Icons.settings,
+                  title: 'Settings',
+                  path: RoutePaths.settings,
+                  isActive: currentLocation.startsWith('/settings'),
+                  isMobile: isMobile,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -60,29 +143,36 @@ class Sidebar extends StatelessWidget {
     required String title,
     required String path,
     required bool isActive,
+    required bool isMobile,
   }) {
+    final Color activeColor = isMobile ? Theme.of(context).primaryColor : Colors.white;
+    final Color? inactiveColor = isMobile ? null : Colors.white70;
+    
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: isActive ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
+        color: isActive 
+            ? (isMobile ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.1))
+            : null,
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16), // Fixed padding
         leading: Icon(
           icon,
-          color: isActive ? Theme.of(context).primaryColor : null,
+          color: isActive ? activeColor : inactiveColor,
+          size: 20,
         ),
-        title: Text( // Removed Flexible wrapper - ListTile handles overflow
+        title: Text(
           title,
           style: TextStyle(
-            color: isActive ? Theme.of(context).primaryColor : null,
-            fontWeight: isActive ? FontWeight.w600 : null,
+            color: isActive ? activeColor : inactiveColor,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            fontSize: 14,
           ),
         ),
         onTap: () {
           context.go(path);
-          if (MediaQuery.of(context).size.width < 768) {
+          if (isMobile) {
             Navigator.pop(context);
           }
         },

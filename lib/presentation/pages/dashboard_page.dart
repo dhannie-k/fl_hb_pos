@@ -15,8 +15,9 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
     return Scaffold(
-      appBar: AppBar(
+      appBar: !isMobile ? AppBar(
         title: Text('Dashboard'),
         automaticallyImplyLeading: false,
         actions: [
@@ -28,7 +29,7 @@ class DashboardPage extends StatelessWidget {
           ),
           SizedBox(width: 16),
         ],
-      ),
+      ): null,
       body: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
           if (state is DashboardLoading) {

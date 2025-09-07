@@ -13,36 +13,42 @@ class MainLayout extends StatelessWidget {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
     final pageTitle = AppRouter.getPageTitle(context);
     
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('HIDUP BARU'),
-            const Icon(Icons.chevron_right, size: 16),
-            const SizedBox(width: 4),
-            Text(pageTitle),
-          ],
-        ),
-        automaticallyImplyLeading: false,
-        toolbarHeight: isMobile ? 56 : 64,
-        actions: [
-          if (isMobile)
+    if (isMobile) {
+      // Mobile Layout: App bar + drawer + bottom nav
+      return Scaffold(
+        appBar: AppBar(
+          title: Row(
+            children: [
+              const Text('HIDUP BARU'),
+              const Icon(Icons.chevron_right, size: 16),
+              const SizedBox(width: 4),
+              Text(pageTitle),
+            ],
+          ),
+          automaticallyImplyLeading: false,
+          actions: [
             Builder(
               builder: (context) => IconButton(
                 icon: const Icon(Icons.menu),
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
             ),
-        ],
-      ),
-      drawer: isMobile ? const Sidebar() : null,
-      body: Row(
-        children: [
-          if (!isMobile) const Sidebar(),
-          Expanded(child: child),
-        ],
-      ),
-      bottomNavigationBar: isMobile ? const MobileBottomNavBar() : null,
-    );
+          ],
+        ),
+        drawer: const Sidebar(),
+        body: child,
+        bottomNavigationBar: const MobileBottomNavBar(),
+      );
+    } else {
+      // Desktop/Tablet Layout: Just sidebar + content (no app bar)
+      return Scaffold(
+        body: Row(
+          children: [
+            const Sidebar(),
+            Expanded(child: child),
+          ],
+        ),
+      );
+    }
   }
 }
