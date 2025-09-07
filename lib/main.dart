@@ -16,6 +16,11 @@ import 'domain/repositories/dashboard_service.dart';
 import 'presentation/bloc/category/category_bloc.dart';
 import 'data/repositories/category_repository_impl.dart';
 
+import 'presentation/bloc/product/product_bloc.dart';
+import 'data/repositories/product_repository_impl.dart';
+
+import 'domain/repositories/product_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -34,6 +39,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Create datasource instance
     final supabaseDatasource = SupabaseDatasource();
+    final productRepository = ProductRepositoryImpl(supabaseDatasource);
+    final productService = ProductService(productRepository);
     
     return MultiBlocProvider(
       providers: [
@@ -52,6 +59,11 @@ class MyApp extends StatelessWidget {
             CategoryRepositoryImpl(supabaseDatasource),
           ),
         ),
+        BlocProvider(
+          create: (context) => ProductBloc(
+          productService: productService
+  ),
+),
         
         // TODO: Add more BLoCs here as we build them
         // ProductBloc, InventoryBloc, SalesBloc, etc.
