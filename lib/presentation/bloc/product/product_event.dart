@@ -21,10 +21,10 @@ class SearchProducts extends ProductEvent {
   List<Object?> get props => [query];
 }
 
-class AddProduct extends ProductEvent {
+class CreateProduct extends ProductEvent {
   final Product product;
 
-  const AddProduct(this.product);
+  const CreateProduct(this.product);
 
   @override
   List<Object?> get props => [product];

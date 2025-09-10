@@ -1,51 +1,101 @@
 // product.dart
 import 'package:equatable/equatable.dart';
+import 'dart:developer' as developer;
 
 class Product extends Equatable {
-  final int id;
+  final int? id;
   final String name;
   final String? description;
   final String? brand;
   final int? categoryId;
-  final DateTime createdAt;
-  final DateTime updatedAt;
 
   const Product({
-    required this.id,
+    this.id,
     required this.name,
     this.description,
     this.brand,
     this.categoryId,
-    required this.createdAt,
-    required this.updatedAt,
   });
 
-  factory Product.fromJson(Map<String, dynamic> json) {
+   // Factory constructor for creating new products
+  factory Product.createNew({
+    required String name,
+    String? description,
+    String? brand,
+    int? categoryId,
+  }) {
     return Product(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      description: json['description'] as String?,
-      brand: json['brand'] as String?,
-      categoryId: json['category_id'] as int?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      id: null, // Always null for new products
+      name: name,
+      description: description,
+      brand: brand,
+      categoryId: categoryId,
     );
   }
 
+ /*  factory Product.fromJson(Map<String, dynamic> json) {
+  return Product(
+    id: json['id'] as int,
+    name: json['name'] as String,
+    description: json['description'] != null ? json['description'] as String : null,
+    brand: json['brand'] != null ? json['brand'] as String : null,
+    categoryId: json['category_id'] != null ? json['category_id'] as int : null,
+    createdAt: DateTime.parse(json['created_at'] as String),
+    updatedAt: DateTime.parse(json['updated_at'] as String),
+  );
+} */
+// Safe Product.fromJson with debugging
+factory Product.fromJson(Map<String, dynamic> json) {
+  try {
+    developer.log('Creating Product from JSON: $json');
+    
+    // Check required fields first
+    if (json['id'] == null) throw ArgumentError('id is required');
+    if (json['name'] == null) throw ArgumentError('name is required');
+    
+    final id = json['id'] is int ? json['id'] as int : int.parse(json['id'].toString());
+    final name = json['name'] as String;
+    
+    // Handle optional fields safely
+    final description = json['description']?.toString();
+    final brand = json['brand']?.toString();
+    final categoryId = json['category_id'] != null 
+        ? (json['category_id'] is int 
+            ? json['category_id'] as int 
+            : int.parse(json['category_id'].toString()))
+        : null;
+    
+    
+    final product = Product(
+      id: id,
+      name: name,
+      description: description,
+      brand: brand,
+      categoryId: categoryId,
+    );
+    
+    developer.log('Product created successfully: ${product.name}');
+    return product;
+  } catch (e, stackTrace) {
+    developer.log('Error in Product.fromJson: $e');
+    developer.log('JSON data: $json');
+    developer.log('Stack trace: $stackTrace');
+    rethrow;
+  }
+}
+
+
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      //'id': id,
       'name': name,
       'description': description,
       'brand': brand,
       'category_id': categoryId,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
   Map<String, dynamic> toCreateJson() {
-    // For creating new products, exclude id and timestamps
     return {
       'name': name,
       'description': description,
@@ -55,13 +105,11 @@ class Product extends Equatable {
   }
 
   Map<String, dynamic> toUpdateJson() {
-    // For updating products, exclude id and created_at
     return {
       'name': name,
       'description': description,
       'brand': brand,
       'category_id': categoryId,
-      'updated_at': DateTime.now().toIso8601String(),
     };
   }
 
@@ -71,8 +119,7 @@ class Product extends Equatable {
     String? description,
     String? brand,
     int? categoryId,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    
   }) {
     return Product(
       id: id ?? this.id,
@@ -80,8 +127,6 @@ class Product extends Equatable {
       description: description ?? this.description,
       brand: brand ?? this.brand,
       categoryId: categoryId ?? this.categoryId,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -119,21 +164,106 @@ class ProductItem extends Equatable {
     required this.updatedAt,
   });
 
-  factory ProductItem.fromJson(Map<String, dynamic> json) {
-    return ProductItem(
-      id: json['id'] as int,
-      productId: json['product_id'] as int,
-      sku: json['sku'] as String?,
-      barcode: json['barcode'] as String?,
-      specification: json['specification'] as String,
-      unitPrice: (json['unit_price'] as num).toDouble(),
-      unitOfMeasure: json['unit_of_measure'] as String,
-      color: json['color'] as String?,
-      supplierId: json['supplier_id'] as int?,
-      minimumStock: json['minimum_stock'] as int?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+  /* factory ProductItem.fromJson(Map<String, dynamic> json) {
+  return ProductItem(
+    id: json['id'] as int,
+    productId: json['product_id'] as int,
+    sku: json['sku'] != null ? json['sku'] as String : null,
+    barcode: json['barcode'] != null ? json['barcode'] as String : null,
+    specification: json['specification'] as String,
+    unitPrice: (json['unit_price'] as num).toDouble(),
+    unitOfMeasure: json['unit_of_measure'] as String,
+    color: json['color'] != null ? json['color'] as String : null,
+    supplierId: json['supplier_id'] != null ? json['supplier_id'] as int : null,
+    minimumStock: json['minimum_stock'] != null ? json['minimum_stock'] as int : null,
+    createdAt: DateTime.parse(json['created_at'] as String),
+    updatedAt: DateTime.parse(json['updated_at'] as String),
+  );
+} */
+// Safe ProductItem.fromJson with debugging
+factory ProductItem.fromJson(Map<String, dynamic> json) {
+  try {
+    developer.log('Creating ProductItem from JSON: $json');
+    
+    // Check required fields first
+    if (json['id'] == null) throw ArgumentError('id is required');
+    if (json['product_id'] == null) throw ArgumentError('product_id is required');
+    if (json['specification'] == null) throw ArgumentError('specification is required');
+    if (json['unit_price'] == null) throw ArgumentError('unit_price is required');
+    if (json['unit_of_measure'] == null) throw ArgumentError('unit_of_measure is required');
+    
+    final id = json['id'] is int ? json['id'] as int : int.parse(json['id'].toString());
+    final productId = json['product_id'] is int 
+        ? json['product_id'] as int 
+        : int.parse(json['product_id'].toString());
+    final specification = json['specification'] as String;
+    final unitPrice = (json['unit_price'] as num).toDouble();
+    final unitOfMeasure = json['unit_of_measure'] as String;
+    
+    // Handle optional fields safely
+    final sku = json['sku']?.toString();
+    final barcode = json['barcode']?.toString();
+    final color = json['color']?.toString();
+    final supplierId = json['supplier_id'] != null 
+        ? (json['supplier_id'] is int 
+            ? json['supplier_id'] as int 
+            : int.parse(json['supplier_id'].toString()))
+        : null;
+    final minimumStock = json['minimum_stock'] != null 
+        ? (json['minimum_stock'] is int 
+            ? json['minimum_stock'] as int 
+            : int.parse(json['minimum_stock'].toString()))
+        : null;
+    
+    // Handle timestamps - check if they exist
+    DateTime? createdAt;
+    DateTime? updatedAt;
+    
+    if (json['created_at'] != null) {
+      try {
+        createdAt = DateTime.parse(json['created_at'] as String);
+      } catch (e) {
+        developer.log('Error parsing created_at: ${json['created_at']}, error: $e');
+        createdAt = DateTime.now(); // fallback
+      }
+    } else {
+      createdAt = DateTime.now(); // fallback
+    }
+    
+    if (json['updated_at'] != null) {
+      try {
+        updatedAt = DateTime.parse(json['updated_at'] as String);
+      } catch (e) {
+        developer.log('Error parsing updated_at: ${json['updated_at']}, error: $e');
+        updatedAt = DateTime.now(); // fallback
+      }
+    } else {
+      updatedAt = DateTime.now(); // fallback
+    }
+    
+    final productItem = ProductItem(
+      id: id,
+      productId: productId,
+      sku: sku,
+      barcode: barcode,
+      specification: specification,
+      unitPrice: unitPrice,
+      unitOfMeasure: unitOfMeasure,
+      color: color,
+      supplierId: supplierId,
+      minimumStock: minimumStock,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
+    
+    developer.log('ProductItem created successfully: ${productItem.specification}');
+    return productItem;
+  } catch (e, stackTrace) {
+    developer.log('Error in ProductItem.fromJson: $e');
+    developer.log('JSON data: $json');
+    developer.log('Stack trace: $stackTrace');
+    rethrow;
+  }
   }
 
   Map<String, dynamic> toJson() {

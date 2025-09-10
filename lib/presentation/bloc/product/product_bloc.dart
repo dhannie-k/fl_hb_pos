@@ -12,7 +12,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       super(const ProductInitial()) {
     on<LoadProducts>(_onLoadProducts);
     on<SearchProducts>(_onSearchProducts);
-    on<AddProduct>(_onAddProduct);
+    on<CreateProduct>(_onAddProduct);
     on<AddProductItem>(_onAddProductItem);
     on<UpdateProduct>(_onUpdateProduct);
     on<UpdateProductItem>(_onUpdateProductItem);
@@ -50,10 +50,11 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   }
 
   Future<void> _onAddProduct(
-    AddProduct event,
+    CreateProduct event,
     Emitter<ProductState> emit,
   ) async {
     try {
+      emit(const ProductLoading());
       await _productService.createProduct(event.product);
       emit(const ProductOperationSuccess('Product added successfully'));
       add(const LoadProducts()); // Reload products

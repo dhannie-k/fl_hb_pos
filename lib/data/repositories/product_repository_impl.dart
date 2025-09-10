@@ -86,7 +86,7 @@ class ProductRepositoryImpl implements ProductRepository {
       final response = await datasource.client
           .from('products')
           .update(product.toJson())
-          .eq('id', product.id)
+          .eq('id', product.id!)
           .select()
           .single();
 
@@ -137,43 +137,43 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getProductsWithItems() async {
-    try {
-      final response = await datasource.client
-          .from('products')
-          .select('''
+Future<List<Map<String, dynamic>>> getProductsWithItems() async {
+  try {
+    final response = await datasource.client
+        .from('products')
+        .select('''
+          id,
+          name,
+          description,
+          brand,
+          category_id,
+          product_items (
             id,
-            name,
-            description,
-            brand,
-            category_id,
+            product_id,
+            specification,
+            sku,
+            barcode,
+            unit_of_measure,
+            color,
+            unit_price,
+            supplier_id,
+            minimum_stock,
             created_at,
-            updated_at,
-            product_items (
-              id,
-              specification,
-              sku,
-              barcode,
-              unit_of_measure,
-              color,
-              unit_price,
-              supplier_id,
-              minimum_stock,
-              created_at,
-              updated_at
-            )
-          ''')
-          .order('name');
+            updated_at
+          )
+        ''')
+        .order('name');
 
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      throw Exception('Failed to fetch products with items: $e');
-    }
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    throw Exception('Failed to fetch products with items: $e');
   }
+}
 
   @override
   Future<List<Map<String, dynamic>>> searchProductsWithItems(String query) async {
     try {
+      // Fix the search query syntax - use individual or conditions
       final response = await datasource.client
           .from('products')
           .select('''
@@ -182,10 +182,9 @@ class ProductRepositoryImpl implements ProductRepository {
             description,
             brand,
             category_id,
-            created_at,
-            updated_at,
             product_items (
               id,
+              product_id,
               specification,
               sku,
               barcode,
@@ -198,7 +197,7 @@ class ProductRepositoryImpl implements ProductRepository {
               updated_at
             )
           ''')
-          .or('name.ilike.%$query%,brand.ilike.%$query%,product_items.specification.ilike.%$query%,product_items.sku.ilike.%$query%,product_items.barcode.ilike.%$query%')
+          .or('name.ilike.%$query%,description.ilike.%$query%,brand.ilike.%$query%')
           .order('name');
 
       return List<Map<String, dynamic>>.from(response);

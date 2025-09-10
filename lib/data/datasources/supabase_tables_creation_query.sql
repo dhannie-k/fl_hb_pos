@@ -66,6 +66,7 @@ CREATE TABLE products(
     brand VARCHAR(50),
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL
 );
+ALTER TABLE products ADD COLUMN image_url TEXT;
 
 -- Product items table
 CREATE TABLE product_items(
