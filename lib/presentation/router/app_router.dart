@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../pages/main_layout.dart';
 import '../pages/dashboard_page.dart';
 import '../pages/inventory_page.dart';
-import '../pages/add_product_page.dart'; // Updated import path
+import '../pages/add_product_page.dart';
+import '../pages/edit_product_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
 
@@ -39,28 +40,32 @@ class AppRouter {
               key: state.pageKey,
               child: AddProductPage(
                 // Extract preselectedCategoryId from query parameters if needed
-                preselectedCategoryId: state.uri.queryParameters['categoryId'] != null
+                preselectedCategoryId:
+                    state.uri.queryParameters['categoryId'] != null
                     ? int.tryParse(state.uri.queryParameters['categoryId']!)
                     : null,
               ),
+            ),
+          ),
+          GoRoute(
+            path: '/inventory/products/edit/:id',
+            builder: (context, state) => EditProductPage(
+              productId: int.parse(state.pathParameters['id']!),
             ),
           ),
           // Add other routes as needed
         ],
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Page not found: ${state.error}'),
-      ),
-    ),
+    errorBuilder: (context, state) =>
+        Scaffold(body: Center(child: Text('Page not found: ${state.error}'))),
   );
 
   static GoRouter get router => _router;
 
   static String getPageTitle(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
-    
+
     switch (location) {
       case RoutePaths.dashboard:
         return 'Dashboard';

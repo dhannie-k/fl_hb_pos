@@ -19,6 +19,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     on<DeleteProduct>(_onDeleteProduct);
     on<DeleteProductItem>(_onDeleteProductItem);
   }
+  ProductService get productService => _productService;
 
   Future<void> _onLoadProducts(
     LoadProducts event,
