@@ -17,7 +17,7 @@ class Product extends Equatable {
     this.categoryId,
   });
 
-   // Factory constructor for creating new products
+  // Factory constructor for creating new products
   factory Product.createNew({
     required String name,
     String? description,
@@ -33,57 +33,45 @@ class Product extends Equatable {
     );
   }
 
- /*  factory Product.fromJson(Map<String, dynamic> json) {
-  return Product(
-    id: json['id'] as int,
-    name: json['name'] as String,
-    description: json['description'] != null ? json['description'] as String : null,
-    brand: json['brand'] != null ? json['brand'] as String : null,
-    categoryId: json['category_id'] != null ? json['category_id'] as int : null,
-    createdAt: DateTime.parse(json['created_at'] as String),
-    updatedAt: DateTime.parse(json['updated_at'] as String),
-  );
-} */
-// Safe Product.fromJson with debugging
-factory Product.fromJson(Map<String, dynamic> json) {
-  try {
-    developer.log('Creating Product from JSON: $json');
-    
-    // Check required fields first
-    if (json['id'] == null) throw ArgumentError('id is required');
-    if (json['name'] == null) throw ArgumentError('name is required');
-    
-    final id = json['id'] is int ? json['id'] as int : int.parse(json['id'].toString());
-    final name = json['name'] as String;
-    
-    // Handle optional fields safely
-    final description = json['description']?.toString();
-    final brand = json['brand']?.toString();
-    final categoryId = json['category_id'] != null 
-        ? (json['category_id'] is int 
-            ? json['category_id'] as int 
-            : int.parse(json['category_id'].toString()))
-        : null;
-    
-    
-    final product = Product(
-      id: id,
-      name: name,
-      description: description,
-      brand: brand,
-      categoryId: categoryId,
-    );
-    
-    developer.log('Product created successfully: ${product.name}');
-    return product;
-  } catch (e, stackTrace) {
-    developer.log('Error in Product.fromJson: $e');
-    developer.log('JSON data: $json');
-    developer.log('Stack trace: $stackTrace');
-    rethrow;
-  }
-}
+  factory Product.fromJson(Map<String, dynamic> json) {
+    try {
+      developer.log('Creating Product from JSON: $json');
 
+      // Check required fields first
+      if (json['id'] == null) throw ArgumentError('id is required');
+      if (json['name'] == null) throw ArgumentError('name is required');
+
+      final id = json['id'] is int
+          ? json['id'] as int
+          : int.parse(json['id'].toString());
+      final name = json['name'] as String;
+
+      // Handle optional fields safely
+      final description = json['description']?.toString();
+      final brand = json['brand']?.toString();
+      final categoryId = json['category_id'] != null
+          ? (json['category_id'] is int
+                ? json['category_id'] as int
+                : int.parse(json['category_id'].toString()))
+          : null;
+
+      final product = Product(
+        id: id,
+        name: name,
+        description: description,
+        brand: brand,
+        categoryId: categoryId,
+      );
+
+      developer.log('Product created successfully: ${product.name}');
+      return product;
+    } catch (e, stackTrace) {
+      developer.log('Error in Product.fromJson: $e');
+      developer.log('JSON data: $json');
+      developer.log('Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -119,7 +107,6 @@ factory Product.fromJson(Map<String, dynamic> json) {
     String? description,
     String? brand,
     int? categoryId,
-    
   }) {
     return Product(
       id: id ?? this.id,
@@ -136,18 +123,18 @@ factory Product.fromJson(Map<String, dynamic> json) {
 
 // product_item.dart
 class ProductItem extends Equatable {
-  final int id;
+  final int? id;
   final int productId;
   final String? sku;
   final String? barcode;
   final String specification;
-  final double unitPrice;
+  final double? unitPrice;
   final String unitOfMeasure;
   final String? color;
   final int? supplierId;
   final int? minimumStock;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const ProductItem({
     required this.id,
@@ -160,110 +147,136 @@ class ProductItem extends Equatable {
     this.color,
     this.supplierId,
     this.minimumStock,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt,
+    this.updatedAt,
   });
 
-  /* factory ProductItem.fromJson(Map<String, dynamic> json) {
-  return ProductItem(
-    id: json['id'] as int,
-    productId: json['product_id'] as int,
-    sku: json['sku'] != null ? json['sku'] as String : null,
-    barcode: json['barcode'] != null ? json['barcode'] as String : null,
-    specification: json['specification'] as String,
-    unitPrice: (json['unit_price'] as num).toDouble(),
-    unitOfMeasure: json['unit_of_measure'] as String,
-    color: json['color'] != null ? json['color'] as String : null,
-    supplierId: json['supplier_id'] != null ? json['supplier_id'] as int : null,
-    minimumStock: json['minimum_stock'] != null ? json['minimum_stock'] as int : null,
-    createdAt: DateTime.parse(json['created_at'] as String),
-    updatedAt: DateTime.parse(json['updated_at'] as String),
-  );
-} */
-// Safe ProductItem.fromJson with debugging
-factory ProductItem.fromJson(Map<String, dynamic> json) {
-  try {
-    developer.log('Creating ProductItem from JSON: $json');
-    
-    // Check required fields first
-    if (json['id'] == null) throw ArgumentError('id is required');
-    if (json['product_id'] == null) throw ArgumentError('product_id is required');
-    if (json['specification'] == null) throw ArgumentError('specification is required');
-    if (json['unit_price'] == null) throw ArgumentError('unit_price is required');
-    if (json['unit_of_measure'] == null) throw ArgumentError('unit_of_measure is required');
-    
-    final id = json['id'] is int ? json['id'] as int : int.parse(json['id'].toString());
-    final productId = json['product_id'] is int 
-        ? json['product_id'] as int 
-        : int.parse(json['product_id'].toString());
-    final specification = json['specification'] as String;
-    final unitPrice = (json['unit_price'] as num).toDouble();
-    final unitOfMeasure = json['unit_of_measure'] as String;
-    
-    // Handle optional fields safely
-    final sku = json['sku']?.toString();
-    final barcode = json['barcode']?.toString();
-    final color = json['color']?.toString();
-    final supplierId = json['supplier_id'] != null 
-        ? (json['supplier_id'] is int 
-            ? json['supplier_id'] as int 
-            : int.parse(json['supplier_id'].toString()))
-        : null;
-    final minimumStock = json['minimum_stock'] != null 
-        ? (json['minimum_stock'] is int 
-            ? json['minimum_stock'] as int 
-            : int.parse(json['minimum_stock'].toString()))
-        : null;
-    
-    // Handle timestamps - check if they exist
-    DateTime? createdAt;
-    DateTime? updatedAt;
-    
-    if (json['created_at'] != null) {
-      try {
-        createdAt = DateTime.parse(json['created_at'] as String);
-      } catch (e) {
-        developer.log('Error parsing created_at: ${json['created_at']}, error: $e');
-        createdAt = DateTime.now(); // fallback
-      }
-    } else {
-      createdAt = DateTime.now(); // fallback
-    }
-    
-    if (json['updated_at'] != null) {
-      try {
-        updatedAt = DateTime.parse(json['updated_at'] as String);
-      } catch (e) {
-        developer.log('Error parsing updated_at: ${json['updated_at']}, error: $e');
-        updatedAt = DateTime.now(); // fallback
-      }
-    } else {
-      updatedAt = DateTime.now(); // fallback
-    }
-    
-    final productItem = ProductItem(
-      id: id,
+  factory ProductItem.createNew({
+    required int productId,
+    String? sku,
+    String? barcode,
+    required String specification,
+    double? unitPrice = 0.0,
+    required String unitOfMeasure,
+    String? color,
+    int? supplierId,
+    int? minimumStock = 0,    
+  }) {
+    return ProductItem(
+      id: null,
       productId: productId,
-      sku: sku,
-      barcode: barcode,
       specification: specification,
       unitPrice: unitPrice,
       unitOfMeasure: unitOfMeasure,
+      sku: sku,
+      barcode: barcode,
       color: color,
-      supplierId: supplierId,
       minimumStock: minimumStock,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
+      createdAt: null,
+      updatedAt: null,
     );
-    
-    developer.log('ProductItem created successfully: ${productItem.specification}');
-    return productItem;
-  } catch (e, stackTrace) {
-    developer.log('Error in ProductItem.fromJson: $e');
-    developer.log('JSON data: $json');
-    developer.log('Stack trace: $stackTrace');
-    rethrow;
   }
+
+ 
+  factory ProductItem.fromJson(Map<String, dynamic> json) {
+    try {
+      developer.log('Creating ProductItem from JSON: $json');
+
+      // Check required fields first
+      if (json['id'] == null) throw ArgumentError('id is required');
+      if (json['product_id'] == null) {
+        throw ArgumentError('product_id is required');
+      }
+      if (json['specification'] == null) {
+        throw ArgumentError('specification is required');
+      }
+      if (json['unit_price'] == null) {
+        throw ArgumentError('unit_price is required');
+      }
+      if (json['unit_of_measure'] == null) {
+        throw ArgumentError('unit_of_measure is required');
+      }
+
+      final id = json['id'] is int
+          ? json['id'] as int
+          : int.parse(json['id'].toString());
+      final productId = json['product_id'] is int
+          ? json['product_id'] as int
+          : int.parse(json['product_id'].toString());
+      final specification = json['specification'] as String;
+      final unitPrice = (json['unit_price'] as num).toDouble();
+      final unitOfMeasure = json['unit_of_measure'] as String;
+
+      // Handle optional fields safely
+      final sku = json['sku']?.toString();
+      final barcode = json['barcode']?.toString();
+      final color = json['color']?.toString();
+      final supplierId = json['supplier_id'] != null
+          ? (json['supplier_id'] is int
+                ? json['supplier_id'] as int
+                : int.parse(json['supplier_id'].toString()))
+          : null;
+      final minimumStock = json['minimum_stock'] != null
+          ? (json['minimum_stock'] is int
+                ? json['minimum_stock'] as int
+                : int.parse(json['minimum_stock'].toString()))
+          : null;
+
+      // Handle timestamps - check if they exist
+      DateTime? createdAt;
+      DateTime? updatedAt;
+
+      if (json['created_at'] != null) {
+        try {
+          createdAt = DateTime.parse(json['created_at'] as String);
+        } catch (e) {
+          developer.log(
+            'Error parsing created_at: ${json['created_at']}, error: $e',
+          );
+          createdAt = DateTime.now(); // fallback
+        }
+      } else {
+        createdAt = DateTime.now(); // fallback
+      }
+
+      if (json['updated_at'] != null) {
+        try {
+          updatedAt = DateTime.parse(json['updated_at'] as String);
+        } catch (e) {
+          developer.log(
+            'Error parsing updated_at: ${json['updated_at']}, error: $e',
+          );
+          updatedAt = DateTime.now(); // fallback
+        }
+      } else {
+        updatedAt = DateTime.now(); // fallback
+      }
+
+      final productItem = ProductItem(
+        id: id,
+        productId: productId,
+        sku: sku,
+        barcode: barcode,
+        specification: specification,
+        unitPrice: unitPrice,
+        unitOfMeasure: unitOfMeasure,
+        color: color,
+        supplierId: supplierId,
+        minimumStock: minimumStock,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
+
+      developer.log(
+        'ProductItem created successfully: ${productItem.specification}',
+      );
+      return productItem;
+    } catch (e, stackTrace) {
+      developer.log('Error in ProductItem.fromJson: $e');
+      developer.log('JSON data: $json');
+      developer.log('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -278,8 +291,8 @@ factory ProductItem.fromJson(Map<String, dynamic> json) {
       'color': color,
       'supplier_id': supplierId,
       'minimum_stock': minimumStock,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
@@ -346,7 +359,15 @@ factory ProductItem.fromJson(Map<String, dynamic> json) {
 
   @override
   List<Object?> get props => [
-    id, productId, sku, barcode, specification, unitPrice, 
-    unitOfMeasure, color, supplierId, minimumStock
+    id,
+    productId,
+    sku,
+    barcode,
+    specification,
+    unitPrice,
+    unitOfMeasure,
+    color,
+    supplierId,
+    minimumStock,
   ];
 }

@@ -6,7 +6,7 @@ class ProductDisplayItem {
   final int productId;
   final int productItemId;
   final String displayName;
-  final String? description;  
+  final String? description;
   final String specification;
   final double unitPrice;
   final String unitOfMeasure;
@@ -14,12 +14,12 @@ class ProductDisplayItem {
   final String? barcode;
   final String? color;
   final int? minimumStock;
-  
+
   const ProductDisplayItem({
     required this.productId,
     required this.productItemId,
     required this.displayName,
-    this.description,  
+    this.description,
     required this.specification,
     required this.unitPrice,
     required this.unitOfMeasure,
@@ -31,9 +31,10 @@ class ProductDisplayItem {
 
   @override
   String toString() => displayName;
-  
-  String get searchableText => 
-      '$displayName $specification ${sku ?? ''} ${barcode ?? ''} ${description ?? ''}'.toLowerCase();
+
+  String get searchableText =>
+      '$displayName $specification ${sku ?? ''} ${barcode ?? ''} ${description ?? ''}'
+          .toLowerCase();
 }
 
 class ProductService {
@@ -45,19 +46,19 @@ class ProductService {
   Future<List<ProductDisplayItem>> getProductDisplayItems() async {
     try {
       developer.log('Starting getProductDisplayItems()');
-      
+
       final productsWithItems = await _repository.getProductsWithItems();
-      
+
       developer.log('Raw data received: ${productsWithItems.length} products');
-      
+
       // Debug: Print first product data structure
       if (productsWithItems.isNotEmpty) {
         developer.log('First product raw data: ${productsWithItems.first}');
       }
-      
+
       final result = _mapToProductDisplayItems(productsWithItems);
       developer.log('Mapped to ${result.length} display items');
-      
+
       return result;
     } catch (e, stackTrace) {
       developer.log('Error in getProductDisplayItems: $e');
@@ -67,17 +68,21 @@ class ProductService {
   }
 
   /// Search products by query string
-  Future<List<ProductDisplayItem>> searchProductDisplayItems(String query) async {
+  Future<List<ProductDisplayItem>> searchProductDisplayItems(
+    String query,
+  ) async {
     try {
       developer.log('Searching products with query: "$query"');
-      
+
       if (query.trim().isEmpty) {
         return await getProductDisplayItems();
       }
 
-      final productsWithItems = await _repository.searchProductsWithItems(query);
+      final productsWithItems = await _repository.searchProductsWithItems(
+        query,
+      );
       developer.log('Search returned ${productsWithItems.length} products');
-      
+
       return _mapToProductDisplayItems(productsWithItems);
     } catch (e, stackTrace) {
       developer.log('Error in searchProductDisplayItems: $e');
@@ -87,28 +92,46 @@ class ProductService {
   }
 
   /// Helper method to map raw data to display items
-  List<ProductDisplayItem> _mapToProductDisplayItems(List<Map<String, dynamic>> productsWithItems) {
-    developer.log('Starting _mapToProductDisplayItems with ${productsWithItems.length} products');
+  List<ProductDisplayItem> _mapToProductDisplayItems(
+    List<Map<String, dynamic>> productsWithItems,
+  ) {
+    developer.log(
+      'Starting _mapToProductDisplayItems with ${productsWithItems.length} products',
+    );
     final List<ProductDisplayItem> displayItems = [];
 
     for (int i = 0; i < productsWithItems.length; i++) {
       try {
         final productData = productsWithItems[i];
         developer.log('Processing product $i: ${productData.keys}');
-        
+
         // Debug: Check each field before creating Product
         developer.log('Product data fields:');
-        developer.log('  - id: ${productData['id']} (${productData['id'].runtimeType})');
-        developer.log('  - name: ${productData['name']} (${productData['name'].runtimeType})');
-        developer.log('  - description: ${productData['description']} (${productData['description'].runtimeType})');
-        developer.log('  - brand: ${productData['brand']} (${productData['brand'].runtimeType})');
-        developer.log('  - category_id: ${productData['category_id']} (${productData['category_id'].runtimeType})');
-        developer.log('  - created_at: ${productData['created_at']} (${productData['created_at']?.runtimeType})');
-        developer.log('  - updated_at: ${productData['updated_at']} (${productData['updated_at']?.runtimeType})');
-        
+        developer.log(
+          '  - id: ${productData['id']} (${productData['id'].runtimeType})',
+        );
+        developer.log(
+          '  - name: ${productData['name']} (${productData['name'].runtimeType})',
+        );
+        developer.log(
+          '  - description: ${productData['description']} (${productData['description'].runtimeType})',
+        );
+        developer.log(
+          '  - brand: ${productData['brand']} (${productData['brand'].runtimeType})',
+        );
+        developer.log(
+          '  - category_id: ${productData['category_id']} (${productData['category_id'].runtimeType})',
+        );
+        developer.log(
+          '  - created_at: ${productData['created_at']} (${productData['created_at']?.runtimeType})',
+        );
+        developer.log(
+          '  - updated_at: ${productData['updated_at']} (${productData['updated_at']?.runtimeType})',
+        );
+
         final product = Product.fromJson(productData);
         developer.log('Product created successfully: ${product.name}');
-        
+
         final productItems = productData['product_items'] as List<dynamic>?;
         developer.log('Product items: ${productItems?.length ?? 0} items');
 
@@ -117,42 +140,70 @@ class ProductService {
             try {
               final itemData = productItems[j] as Map<String, dynamic>;
               developer.log('Processing item $j: ${itemData.keys}');
-              
+
               // Debug: Check each field before creating ProductItem
               developer.log('Item data fields:');
-              developer.log('  - id: ${itemData['id']} (${itemData['id'].runtimeType})');
-              developer.log('  - product_id: ${itemData['product_id']} (${itemData['product_id'].runtimeType})');
-              developer.log('  - specification: ${itemData['specification']} (${itemData['specification'].runtimeType})');
-              developer.log('  - sku: ${itemData['sku']} (${itemData['sku']?.runtimeType})');
-              developer.log('  - barcode: ${itemData['barcode']} (${itemData['barcode']?.runtimeType})');
-              developer.log('  - unit_price: ${itemData['unit_price']} (${itemData['unit_price'].runtimeType})');
-              developer.log('  - unit_of_measure: ${itemData['unit_of_measure']} (${itemData['unit_of_measure'].runtimeType})');
-              developer.log('  - color: ${itemData['color']} (${itemData['color']?.runtimeType})');
-              developer.log('  - supplier_id: ${itemData['supplier_id']} (${itemData['supplier_id']?.runtimeType})');
-              developer.log('  - minimum_stock: ${itemData['minimum_stock']} (${itemData['minimum_stock']?.runtimeType})');
-              developer.log('  - created_at: ${itemData['created_at']} (${itemData['created_at']?.runtimeType})');
-              developer.log('  - updated_at: ${itemData['updated_at']} (${itemData['updated_at']?.runtimeType})');
-              
+              developer.log(
+                '  - id: ${itemData['id']} (${itemData['id'].runtimeType})',
+              );
+              developer.log(
+                '  - product_id: ${itemData['product_id']} (${itemData['product_id'].runtimeType})',
+              );
+              developer.log(
+                '  - specification: ${itemData['specification']} (${itemData['specification'].runtimeType})',
+              );
+              developer.log(
+                '  - sku: ${itemData['sku']} (${itemData['sku']?.runtimeType})',
+              );
+              developer.log(
+                '  - barcode: ${itemData['barcode']} (${itemData['barcode']?.runtimeType})',
+              );
+              developer.log(
+                '  - unit_price: ${itemData['unit_price']} (${itemData['unit_price'].runtimeType})',
+              );
+              developer.log(
+                '  - unit_of_measure: ${itemData['unit_of_measure']} (${itemData['unit_of_measure'].runtimeType})',
+              );
+              developer.log(
+                '  - color: ${itemData['color']} (${itemData['color']?.runtimeType})',
+              );
+              developer.log(
+                '  - supplier_id: ${itemData['supplier_id']} (${itemData['supplier_id']?.runtimeType})',
+              );
+              developer.log(
+                '  - minimum_stock: ${itemData['minimum_stock']} (${itemData['minimum_stock']?.runtimeType})',
+              );
+              developer.log(
+                '  - created_at: ${itemData['created_at']} (${itemData['created_at']?.runtimeType})',
+              );
+              developer.log(
+                '  - updated_at: ${itemData['updated_at']} (${itemData['updated_at']?.runtimeType})',
+              );
+
               final productItem = ProductItem.fromJson(itemData);
-              developer.log('ProductItem created successfully: ${productItem.specification}');
-              
+              developer.log(
+                'ProductItem created successfully: ${productItem.specification}',
+              );
+
               final displayName = _generateDisplayName(product, productItem);
               developer.log('Display name generated: $displayName');
-              
-              displayItems.add(ProductDisplayItem(
-                productId: product.id!,
-                productItemId: productItem.id,
-                displayName: displayName,
-                description: product.description,
-                specification: productItem.specification,
-                unitPrice: productItem.unitPrice,
-                unitOfMeasure: productItem.unitOfMeasure,
-                sku: productItem.sku,
-                barcode: productItem.barcode,
-                color: productItem.color,
-                minimumStock: productItem.minimumStock,
-              ));
-              
+
+              displayItems.add(
+                ProductDisplayItem(
+                  productId: product.id!,
+                  productItemId: productItem.id!,
+                  displayName: displayName,
+                  description: product.description,
+                  specification: productItem.specification,
+                  unitPrice: productItem.unitPrice!,
+                  unitOfMeasure: productItem.unitOfMeasure,
+                  sku: productItem.sku,
+                  barcode: productItem.barcode,
+                  color: productItem.color,
+                  minimumStock: productItem.minimumStock,
+                ),
+              );
+
               developer.log('ProductDisplayItem added successfully');
             } catch (e, stackTrace) {
               developer.log('Error processing product item $j: $e');
@@ -166,21 +217,23 @@ class ProductService {
           try {
             final displayName = _generateDisplayNameForProductOnly(product);
             developer.log('Display name for product only: $displayName');
-            
-            displayItems.add(ProductDisplayItem(
-              productId: product.id!,
-              productItemId: 0, // No item ID
-              displayName: displayName,
-              description: product.description,
-              specification: 'No specifications',
-              unitPrice: 0.0,
-              unitOfMeasure: 'pc',
-              sku: null,
-              barcode: null,
-              color: null,
-              minimumStock: null,
-            ));
-            
+
+            displayItems.add(
+              ProductDisplayItem(
+                productId: product.id!,
+                productItemId: 0, // No item ID
+                displayName: displayName,
+                description: product.description,
+                specification: 'No specifications',
+                unitPrice: 0.0,
+                unitOfMeasure: 'pc',
+                sku: null,
+                barcode: null,
+                color: null,
+                minimumStock: null,
+              ),
+            );
+
             developer.log('Product-only display item added successfully');
           } catch (e, stackTrace) {
             developer.log('Error creating product-only display item: $e');
@@ -201,88 +254,103 @@ class ProductService {
   }
 
   /// Generate display name combining product and item info
-String _generateDisplayName(Product product, ProductItem productItem) {
-  try {
-    developer.log('Generating display name for: ${product.name} - ${productItem.specification}');
-    
-    final parts = <String>[];
-    
-    // Start with product name
-    if (product.name.isEmpty) {
-      developer.log('Warning: Product name is empty');
-    }
-    parts.add(product.name);
-    
-    // Add brand if available
-    if (product.brand != null && product.brand!.isNotEmpty) {
-      parts.add(product.brand!);
-      developer.log('Added brand: ${product.brand}');
-    }
-    
-    final result = parts.join(', ');
-    developer.log('Final display name: $result');
-    return result;
-  } catch (e, stackTrace) {
-    developer.log('Error in _generateDisplayName: $e');
-    developer.log('Stack trace: $stackTrace');
-    developer.log('Product: ${product.toString()}');
-    developer.log('ProductItem: ${productItem.toString()}');
-    rethrow;
-  }
-}
+  String _generateDisplayName(Product product, ProductItem productItem) {
+    try {
+      developer.log(
+        'Generating display name for: ${product.name} - ${productItem.specification}',
+      );
 
-// Generate display name for product without items
-String _generateDisplayNameForProductOnly(Product product) {
-  try {
-    developer.log('Generating display name for product only: ${product.name}');
-    
-    final parts = <String>[];
-    
-    if (product.name.isEmpty) {
-      developer.log('Warning: Product name is empty');
+      final parts = <String>[];
+
+      // Start with product name
+      if (product.name.isEmpty) {
+        developer.log('Warning: Product name is empty');
+      }
+      parts.add(product.name);
+
+      // Add brand if available
+      if (product.brand != null && product.brand!.isNotEmpty) {
+        parts.add(product.brand!);
+        developer.log('Added brand: ${product.brand}');
+      }
+
+      final result = parts.join(', ');
+      developer.log('Final display name: $result');
+      return result;
+    } catch (e, stackTrace) {
+      developer.log('Error in _generateDisplayName: $e');
+      developer.log('Stack trace: $stackTrace');
+      developer.log('Product: ${product.toString()}');
+      developer.log('ProductItem: ${productItem.toString()}');
+      rethrow;
     }
-    parts.add(product.name);
-    
-    if (product.brand != null && product.brand!.isNotEmpty) {
-      parts.add(product.brand!);
-      developer.log('Added brand: ${product.brand}');
-    }
-    
-    final result = parts.join(', ');
-    developer.log('Final display name (product only): $result');
-    return result;
-  } catch (e, stackTrace) {
-    developer.log('Error in _generateDisplayNameForProductOnly: $e');
-    developer.log('Stack trace: $stackTrace');
-    developer.log('Product: ${product.toString()}');
-    rethrow;
   }
-}
+
+  // Generate display name for product without items
+  String _generateDisplayNameForProductOnly(Product product) {
+    try {
+      developer.log(
+        'Generating display name for product only: ${product.name}',
+      );
+
+      final parts = <String>[];
+
+      if (product.name.isEmpty) {
+        developer.log('Warning: Product name is empty');
+      }
+      parts.add(product.name);
+
+      if (product.brand != null && product.brand!.isNotEmpty) {
+        parts.add(product.brand!);
+        developer.log('Added brand: ${product.brand}');
+      }
+
+      final result = parts.join(', ');
+      developer.log('Final display name (product only): $result');
+      return result;
+    } catch (e, stackTrace) {
+      developer.log('Error in _generateDisplayNameForProductOnly: $e');
+      developer.log('Stack trace: $stackTrace');
+      developer.log('Product: ${product.toString()}');
+      rethrow;
+    }
+  }
 
   /// Get display items for a specific product
-  Future<List<ProductDisplayItem>> getProductDisplayItemsByProductId(int productId) async {
+  Future<List<ProductDisplayItem>> getProductDisplayItemsByProductId(
+    int productId,
+  ) async {
     try {
-      final product = await _repository.getProducts()
-          .then((products) => products.firstWhere((p) => p.id == productId));
-      
-      final productItems = await _repository.getProductItemsByProductId(productId);
-      
-      return productItems.map((item) => ProductDisplayItem(
-        //TODO() refactor this null field
-        productId: product.id!,
-        productItemId: item.id,
-        displayName: _generateDisplayName(product, item),
-        description: product.description,
-        specification: item.specification,
-        unitPrice: item.unitPrice,
-        unitOfMeasure: item.unitOfMeasure,
-        sku: item.sku,
-        barcode: item.barcode,
-        color: item.color,
-        minimumStock: item.minimumStock,
-      )).toList();
+      final product = await _repository.getProducts().then(
+        (products) => products.firstWhere((p) => p.id == productId),
+      );
+
+      final productItems = await _repository.getProductItemsByProductId(
+        productId,
+      );
+
+      return productItems
+          .map(
+            (item) => ProductDisplayItem(
+              //TODO() refactor this null field
+              productId: product.id!,
+              productItemId: item.id!,
+              displayName: _generateDisplayName(product, item),
+              description: product.description,
+              specification: item.specification,
+              unitPrice: item.unitPrice!,
+              unitOfMeasure: item.unitOfMeasure,
+              sku: item.sku,
+              barcode: item.barcode,
+              color: item.color,
+              minimumStock: item.minimumStock,
+            ),
+          )
+          .toList();
     } catch (e) {
-      throw Exception('Failed to get product display items for product $productId: $e');
+      throw Exception(
+        'Failed to get product display items for product $productId: $e',
+      );
     }
   }
 
@@ -321,6 +389,22 @@ String _generateDisplayNameForProductOnly(Product product) {
       return await _repository.createProductItem(productItem);
     } catch (e) {
       throw Exception('Failed to create product item: $e');
+    }
+  }
+
+  Future<ProductItem> createProductItemWithInitialQuantity(
+    ProductItem productItem,
+    int initialQuantity,
+  ) async {
+    try {
+      return await _repository.createProductItemWithInitialQuantity(
+        productItem,
+        initialQuantity,
+      );
+    } catch (e) {
+      throw Exception(
+        'Failed to create product item with initial quantity: $e',
+      );
     }
   }
 

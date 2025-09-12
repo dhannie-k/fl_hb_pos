@@ -69,8 +69,14 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     Emitter<ProductState> emit,
   ) async {
     try {
-      await _productService.createProductItem(event.productItem);
+      if (event.initialQuantity > 0){
+      await _productService.createProductItemWithInitialQuantity(event.productItem, event.initialQuantity);
+
+      emit(const ProductOperationSuccess('Product item with initial stock added successfully'));
+      }else{
+        await _productService.createProductItem(event.productItem);
       emit(const ProductOperationSuccess('Product item added successfully'));
+      }
       add(const LoadProducts()); // Reload products
     } catch (e) {
       emit(ProductError(e.toString()));

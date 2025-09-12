@@ -11,6 +11,10 @@ abstract class ProductRepository {
   Future<List<ProductItem>> getProductItems();
   Future<List<ProductItem>> getProductItemsByProductId(int productId);
   Future<ProductItem> createProductItem(ProductItem productItem);
+  Future<ProductItem> createProductItemWithInitialQuantity(
+    ProductItem productItem,
+    int initialQuantity,
+  );
   Future<ProductItem> updateProductItem(ProductItem productItem);
   Future<void> deleteProductItem(int id);
   

@@ -32,8 +32,9 @@ class CreateProduct extends ProductEvent {
 
 class AddProductItem extends ProductEvent {
   final ProductItem productItem;
+  final int initialQuantity;
 
-  const AddProductItem(this.productItem);
+  const AddProductItem(this.productItem, {this.initialQuantity = 0});
 
   @override
   List<Object?> get props => [productItem];

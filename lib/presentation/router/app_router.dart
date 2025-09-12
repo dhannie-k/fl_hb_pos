@@ -5,6 +5,7 @@ import '../pages/dashboard_page.dart';
 import '../pages/inventory_page.dart';
 import '../pages/add_product_page.dart';
 import '../pages/edit_product_page.dart';
+import '../pages/add_product_item_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
 
@@ -53,6 +54,13 @@ class AppRouter {
               productId: int.parse(state.pathParameters['id']!),
             ),
           ),
+          GoRoute(
+  path: '/inventory/products/:id/add-item',
+  builder: (context, state) => AddProductItemPage(
+    productId: int.parse(state.pathParameters['id']!),
+  ),
+),
+
           // Add other routes as needed
         ],
       ),

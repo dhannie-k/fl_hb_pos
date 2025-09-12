@@ -70,7 +70,7 @@ class ProductRepositoryImpl implements ProductRepository {
     try {
       final response = await datasource.client
           .from('product_items')
-          .insert(productItem.toJson())
+          .insert(productItem.toCreateJson())
           .select()
           .single();
 
@@ -79,6 +79,32 @@ class ProductRepositoryImpl implements ProductRepository {
       throw Exception('Failed to create product item: $e');
     }
   }
+  @override
+Future<ProductItem> createProductItemWithInitialQuantity(
+  ProductItem productItem,
+  int initialQuantity,
+) async {
+  final response = await datasource.client
+      .rpc('create_product_item_with_initial_quantity', params: {
+    'p_product_id': productItem.productId,
+    'p_specification': productItem.specification,
+    'p_unit_price': productItem.unitPrice,
+    'p_unit_of_measure': productItem.unitOfMeasure,
+    'p_sku': productItem.sku,
+    'p_barcode': productItem.barcode,
+    'p_color': productItem.color,
+    'p_supplier_id': productItem.supplierId,
+    'p_minimum_stock': productItem.minimumStock ?? 0,
+    'p_initial_quantity': initialQuantity,
+  });
+
+  if (response == null) {
+    throw Exception('Failed to create product item with initial quantity');
+  }
+
+  return ProductItem.fromJson(response as Map<String, dynamic>);
+}
+
 
   @override
   Future<Product> updateProduct(Product product) async {
@@ -102,7 +128,7 @@ class ProductRepositoryImpl implements ProductRepository {
       final response = await datasource.client
           .from('product_items')
           .update(productItem.toJson())
-          .eq('id', productItem.id)
+          .eq('id', productItem.id!)
           .select()
           .single();
 

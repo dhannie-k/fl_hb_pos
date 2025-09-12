@@ -92,7 +92,7 @@ CREATE TABLE inventory(
 );
 
 -- Transaction table
-CREATE TABLE transaction (
+CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
     transaction_type movement_type NOT NULL,
     date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
