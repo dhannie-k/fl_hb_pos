@@ -8,6 +8,7 @@ class Product extends Equatable {
   final String? description;
   final String? brand;
   final int? categoryId;
+  final String? imageUrl;
 
   const Product({
     this.id,
@@ -15,6 +16,7 @@ class Product extends Equatable {
     this.description,
     this.brand,
     this.categoryId,
+    this.imageUrl,
   });
 
   // Factory constructor for creating new products
@@ -54,6 +56,7 @@ class Product extends Equatable {
                 ? json['category_id'] as int
                 : int.parse(json['category_id'].toString()))
           : null;
+      final imageUrl = json['image_url'] != null? (json['image_url']) as String : null;
 
       final product = Product(
         id: id,
@@ -61,6 +64,7 @@ class Product extends Equatable {
         description: description,
         brand: brand,
         categoryId: categoryId,
+        imageUrl: imageUrl,
       );
 
       developer.log('Product created successfully: ${product.name}');
@@ -80,6 +84,7 @@ class Product extends Equatable {
       'description': description,
       'brand': brand,
       'category_id': categoryId,
+      'image_url' : imageUrl,
     };
   }
 
@@ -89,6 +94,7 @@ class Product extends Equatable {
       'description': description,
       'brand': brand,
       'category_id': categoryId,
+      'image_url' : imageUrl,
     };
   }
 
@@ -98,6 +104,7 @@ class Product extends Equatable {
       'description': description,
       'brand': brand,
       'category_id': categoryId,
+      'image_url' : imageUrl,
     };
   }
 
@@ -107,6 +114,7 @@ class Product extends Equatable {
     String? description,
     String? brand,
     int? categoryId,
+    String? imageUrl,
   }) {
     return Product(
       id: id ?? this.id,
@@ -114,11 +122,12 @@ class Product extends Equatable {
       description: description ?? this.description,
       brand: brand ?? this.brand,
       categoryId: categoryId ?? this.categoryId,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
   @override
-  List<Object?> get props => [id, name, description, brand, categoryId];
+  List<Object?> get props => [id, name, description, brand, categoryId, imageUrl];
 }
 
 // product_item.dart

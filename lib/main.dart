@@ -21,6 +21,10 @@ import 'data/repositories/product_repository_impl.dart';
 
 import 'domain/repositories/product_service.dart';
 
+// Inventory imports
+import 'presentation/bloc/inventory/inventory_bloc.dart';
+import 'presentation/bloc/inventory/inventory_event.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -41,30 +45,31 @@ class MyApp extends StatelessWidget {
     final supabaseDatasource = SupabaseDatasource();
     final productRepository = ProductRepositoryImpl(supabaseDatasource);
     final productService = ProductService(productRepository);
-    
+
     return MultiBlocProvider(
       providers: [
         // Dashboard BLoC
         BlocProvider(
           create: (context) => DashboardBloc(
-            DashboardService(
-              DashboardRepositoryImpl(supabaseDatasource),
-            ),
+            DashboardService(DashboardRepositoryImpl(supabaseDatasource)),
           )..add(LoadDashboard()),
         ),
-        
+
         // Category BLoC
         BlocProvider(
-          create: (context) => CategoryBloc(
-            CategoryRepositoryImpl(supabaseDatasource),
-          ),
+          create: (context) =>
+              CategoryBloc(CategoryRepositoryImpl(supabaseDatasource)),
         ),
         BlocProvider(
-          create: (context) => ProductBloc(
-          productService: productService
-  ),
-),
-        
+          create: (context) => ProductBloc(productService: productService),
+        ),
+        // InventoryBloc
+        BlocProvider(
+          create: (context) =>
+              InventoryBloc(productRepository)
+                ..add(LoadInventory()), // dispatch on creation
+        ),
+
         // TODO: Add more BLoCs here as we build them
         // ProductBloc, InventoryBloc, SalesBloc, etc.
       ],

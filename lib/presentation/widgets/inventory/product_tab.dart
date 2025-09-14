@@ -55,7 +55,7 @@ class _ProductTabState extends State<ProductTab> {
               if (state is ProductLoading) {
                 return const LoadingWidget();
               }
-              
+
               if (state is ProductError) {
                 return Center(
                   child: Column(
@@ -75,20 +75,22 @@ class _ProductTabState extends State<ProductTab> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () => context.read<ProductBloc>().add(const LoadProducts()),
+                        onPressed: () => context.read<ProductBloc>().add(
+                          const LoadProducts(),
+                        ),
                         child: const Text('Retry'),
                       ),
                     ],
                   ),
                 );
               }
-              
+
               if (state is ProductLoaded) {
                 _allProducts = state.products;
                 _applyFilters();
                 return _buildProductGrid(_filteredProducts);
               }
-              
+
               return const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -123,10 +125,7 @@ class _ProductTabState extends State<ProductTab> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Products',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text('Products', style: Theme.of(context).textTheme.headlineSmall),
           ElevatedButton.icon(
             onPressed: () => context.push('/inventory/products/add'),
             icon: const Icon(Icons.add),
@@ -172,12 +171,14 @@ class _ProductTabState extends State<ProductTab> {
             Icon(Icons.inventory_2, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
-              searchQuery.isEmpty ? 'No products found' : 'No products match your search',
+              searchQuery.isEmpty
+                  ? 'No products found'
+                  : 'No products match your search',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              searchQuery.isEmpty 
+              searchQuery.isEmpty
                   ? 'Add some products to get started'
                   : 'Try adjusting your search terms',
               style: TextStyle(color: Colors.grey.shade600),
@@ -200,23 +201,29 @@ class _ProductTabState extends State<ProductTab> {
         // Calculate cross axis count based on screen width
         int crossAxisCount;
         double childAspectRatio;
-        
+
         if (constraints.maxWidth > 1200) {
           crossAxisCount = 4;
           childAspectRatio = 0.8;
         } else if (constraints.maxWidth > 800) {
           crossAxisCount = 3;
-          childAspectRatio = 0.75;
+          childAspectRatio = 0.9;
+          //childAspectRatio = 0.65;
         } else if (constraints.maxWidth > 600) {
           crossAxisCount = 2;
-          childAspectRatio = 0.75;
+          childAspectRatio = 1.2;
         } else {
           crossAxisCount = 2;
-          childAspectRatio = 0.7;
+          childAspectRatio = 0.6;
         }
 
         return GridView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), // Remove top padding
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            16,
+          ), // Remove top padding
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: 12,
@@ -236,156 +243,201 @@ class _ProductTabState extends State<ProductTab> {
   Widget _buildProductCard(ProductDisplayItem product) {
     return Card(
       elevation: 2,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.push('/inventory/products/view/${product.productId}'), 
+        onTap: () =>
+            context.push('/inventory/products/view/${product.productId}'),
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Product image placeholder
-              Container(
-                height: 60, // Reduced height to prevent overflow
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.inventory_2,
-                  size: 28, 
-                  color: Colors.grey.shade400,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product image placeholder
+            Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        product.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.broken_image,
+                          size: 28,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      Icons.inventory_2,
+                      size: 28,
+                      color: Colors.grey.shade400,
+                    ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Product name (main title)
+                        Text(
+                          product.displayName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        // Product description (subtitle)
+                        if (product.description != null &&
+                            product.description!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            product.description!,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              
-              // Product name (main title)
-              Text(
-                product.displayName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              
-              // Product description (subtitle)
-              if (product.description != null && product.description!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  product.description!,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
+            ),
+
+            //const Spacer(),
+            const SizedBox(height: 8),
+
+            // stauts badge and actions
+            Row(
+              children: [
+                // Show item count or "No items" status
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  decoration: BoxDecoration(
+                    color: product.items.isEmpty
+                        ? Colors.orange.shade100
+                        : Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    product.items.isEmpty ? 'No items' : 'Has items',
+                    style: TextStyle(
+                      color: product.items.isEmpty
+                          ? Colors.orange.shade700
+                          : Colors.green.shade700,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+
+                const Spacer(),
+                // Actions
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, size: 18),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'view',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.visibility, size: 16),
+                              SizedBox(width: 8),
+                              Text('View', style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.edit, size: 16),
+                              SizedBox(width: 8),
+                              Text('Edit', style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'add_item',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_box, size: 16),
+                              SizedBox(width: 8),
+                              Text('Add Item', style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.delete, size: 16, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'view':
+                            context.push(
+                              '/inventory/products/view/${product.productId}',
+                            );
+                            break;
+                          case 'edit':
+                            context.push(
+                              '/inventory/products/edit/${product.productId}',
+                            );
+                            break;
+                          case 'add_item':
+                            context.push(
+                              '/inventory/products/${product.productId}/add-item',
+                            );
+                            break;
+                          case 'delete':
+                            _showDeleteProductDialog(product);
+                            break;
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ],
-              
-              const Spacer(),
-              
-              // Show item count or "No items" status
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: product.productItemId == 0 
-                      ? Colors.orange.shade100 
-                      : Colors.green.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  product.productItemId == 0 
-                      ? 'No items'
-                      : 'Has items',
-                  style: TextStyle(
-                    color: product.productItemId == 0 
-                        ? Colors.orange.shade700 
-                        : Colors.green.shade700,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 6),
-              
-              // Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, size: 18),
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'view',
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.visibility, size: 16),
-                            SizedBox(width: 8),
-                            Text('View', style: TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.edit, size: 16),
-                            SizedBox(width: 8),
-                            Text('Edit', style: TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'add_item',
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_box, size: 16),
-                            SizedBox(width: 8),
-                            Text('Add Item', style: TextStyle(fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.delete, size: 16, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Delete', 
-                                 style: TextStyle(color: Colors.red, fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                    ],
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'view':
-                          context.push('/inventory/products/view/${product.productId}');
-                          break;
-                        case 'edit':
-                          context.push('/inventory/products/edit/${product.productId}');
-                          break;
-                        case 'add_item':
-                          context.push('/inventory/products/${product.productId}/add-item');
-                          break;
-                        case 'delete':
-                          _showDeleteProductDialog(product);
-                          break;
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -403,7 +455,7 @@ class _ProductTabState extends State<ProductTab> {
             const Text('Are you sure you want to delete this product?'),
             const SizedBox(height: 8),
             Text(
-              product.displayName,
+              product.name,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             if (product.description != null && product.description!.isNotEmpty)
@@ -411,10 +463,7 @@ class _ProductTabState extends State<ProductTab> {
             const SizedBox(height: 8),
             const Text(
               'Warning: This will delete the product and all its items permanently.',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -429,7 +478,7 @@ class _ProductTabState extends State<ProductTab> {
               Navigator.pop(context);
             },
             child: const Text(
-              'Delete Product', 
+              'Delete Product',
               style: TextStyle(color: Colors.red),
             ),
           ),

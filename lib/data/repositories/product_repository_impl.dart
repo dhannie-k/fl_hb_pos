@@ -162,39 +162,19 @@ Future<ProductItem> createProductItemWithInitialQuantity(
     }
   }
 
-  @override
+ @override
 Future<List<Map<String, dynamic>>> getProductsWithItems() async {
-  try {
-    final response = await datasource.client
-        .from('products')
-        .select('''
-          id,
-          name,
-          description,
-          brand,
-          category_id,
-          product_items (
-            id,
-            product_id,
-            specification,
-            sku,
-            barcode,
-            unit_of_measure,
-            color,
-            unit_price,
-            supplier_id,
-            minimum_stock,
-            created_at,
-            updated_at
-          )
-        ''')
-        .order('name');
+  final response = await datasource.client.rpc('get_products_with_items');
 
-    return List<Map<String, dynamic>>.from(response);
-  } catch (e) {
-    throw Exception('Failed to fetch products with items: $e');
+  if (response == null) {
+    throw Exception('No data returned from get_products_with_items');
   }
+
+  // Supabase returns List<dynamic>
+  final data = response as List<dynamic>;
+  return data.map((e) => e as Map<String, dynamic>).toList();
 }
+
 
   @override
   Future<List<Map<String, dynamic>>> searchProductsWithItems(String query) async {
@@ -231,4 +211,17 @@ Future<List<Map<String, dynamic>>> getProductsWithItems() async {
       throw Exception('Failed to search products: $e');
     }
   }
+  //get inventory list
+  @override
+  Future<List<Map<String, dynamic>>> getInventory() async {
+  final response = await datasource.client.rpc('get_inventory');
+
+  if (response == null) {
+    throw Exception('No data returned from get_inventory');
+  }
+
+  final data = response as List<dynamic>;
+  return data.map((e) => e as Map<String, dynamic>).toList();
+}
+
 }

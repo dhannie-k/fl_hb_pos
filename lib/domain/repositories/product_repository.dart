@@ -21,4 +21,5 @@ abstract class ProductRepository {
   // Combined operations for efficient queries
   Future<List<Map<String, dynamic>>> getProductsWithItems();
   Future<List<Map<String, dynamic>>> searchProductsWithItems(String query);
+  Future<List<Map<String, dynamic>>> getInventory();
 }
