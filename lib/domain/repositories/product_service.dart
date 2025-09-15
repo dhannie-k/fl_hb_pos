@@ -27,7 +27,7 @@ class ProductDisplayItem {
       /// Combine name and brand for UI
   String get displayName {
     if (brand == null || brand!.trim().isEmpty) {
-      return '$name, -';
+      return name;
     }
     return '$name, $brand';
   }

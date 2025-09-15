@@ -13,20 +13,30 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
   }
 
   Future<void> _onLoadInventory(
-      LoadInventory event, Emitter<InventoryState> emit) async {
+    LoadInventory event,
+    Emitter<InventoryState> emit,
+  ) async {
     emit(InventoryLoading());
     try {
       final data = await repository.getInventory();
-      final items =
-          data.map((json) => InventoryItem.fromJson(json)).toList();
+      final items = data.map((json) => InventoryItem.fromJson(json)).toList();
       emit(InventoryLoaded(items));
+      //emit(const InventoryOperationSuccess('Inventory refreshed'));
     } catch (e) {
       emit(InventoryError('Failed to load inventory: $e'));
     }
   }
 
   Future<void> _onRefreshInventory(
-      RefreshInventory event, Emitter<InventoryState> emit) async {
-    add(LoadInventory());
+    RefreshInventory event,
+    Emitter<InventoryState> emit,
+  ) async {
+    try {
+      final data = await repository.getInventory();
+      final items = data.map((json) => InventoryItem.fromJson(json)).toList();
+      emit(InventoryLoaded(items, message: 'Inventory refreshed'));
+    } catch (e) {
+      emit(InventoryError('Failed to refresh inventory: $e'));
+    }
   }
 }
