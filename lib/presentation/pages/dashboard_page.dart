@@ -17,33 +17,35 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
     return Scaffold(
-      appBar: !isMobile ? AppBar(
-        title: Text('Dashboard'),
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              context.read<DashboardBloc>().add(RefreshDashboard());
-            },
-          ),
-          SizedBox(width: 16),
-        ],
-      ): null,
+      appBar: !isMobile
+          ? AppBar(
+              title: Text('Dashboard'),
+              automaticallyImplyLeading: false,
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.refresh),
+                  onPressed: () {
+                    context.read<DashboardBloc>().add(RefreshDashboard());
+                  },
+                ),
+                SizedBox(width: 16),
+              ],
+            )
+          : null,
       body: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
           if (state is DashboardLoading) {
             return _buildLoadingState();
           }
-          
+
           if (state is DashboardError) {
             return _buildErrorState(context, state.message);
           }
-          
+
           if (state is DashboardLoaded) {
             return _buildDashboardContent(context, state.stats);
           }
-          
+
           // Initial state
           return _buildInitialState(context);
         },
@@ -56,16 +58,11 @@ class DashboardPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            color: AppColors.primary,
-          ),
+          CircularProgressIndicator(color: AppColors.primary),
           SizedBox(height: 16),
           Text(
             'Loading dashboard data...',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
           ),
         ],
       ),
@@ -77,11 +74,7 @@ class DashboardPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64, 
-            color: AppColors.error,
-          ),
+          Icon(Icons.error_outline, size: 64, color: AppColors.error),
           SizedBox(height: 16),
           Text(
             'Oops! Something went wrong',
@@ -97,10 +90,7 @@ class DashboardPage extends StatelessWidget {
             child: Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
           ),
           SizedBox(height: 24),
@@ -125,11 +115,7 @@ class DashboardPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.dashboard,
-            size: 64,
-            color: AppColors.textMuted,
-          ),
+          Icon(Icons.dashboard, size: 64, color: AppColors.textMuted),
           SizedBox(height: 16),
           Text(
             'Welcome to Hidup Baru POS',
@@ -142,9 +128,7 @@ class DashboardPage extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             'Loading your dashboard...',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -152,35 +136,36 @@ class DashboardPage extends StatelessWidget {
   }
 
   Widget _buildDashboardContent(BuildContext context, DashboardStats stats) {
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
     return SingleChildScrollView(
-      padding: EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile? 16 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Check if we have any data at all
           if (_hasAnyData(stats)) ...[
             // Stats Cards Row
-            _buildStatsCards(stats),
+            _buildStatsGrid(context, stats, isMobile: isMobile),
             SizedBox(height: 24),
-            // Content Cards Row  
-            _buildContentCards(stats),
+            // Content Cards Row
+            _buildContentCards(stats, isMobile: isMobile),
             SizedBox(height: 24),
             // Additional Cards Row
-            _buildAdditionalCards(stats),
+            _buildAdditionalCards(stats, isMobile: isMobile),
           ] else ...[
             _buildEmptyDataState(context),
-          ]
+          ],
         ],
       ),
     );
   }
 
   bool _hasAnyData(DashboardStats stats) {
-    return stats.totalSales > 0 || 
-           stats.newOrders > 0 || 
-           stats.pendingOrders > 0 ||
-           stats.topItems.isNotEmpty ||
-           stats.lowStockItems.isNotEmpty;
+    return stats.totalSales > 0 ||
+        stats.newOrders > 0 ||
+        stats.pendingOrders > 0 ||
+        stats.topItems.isNotEmpty ||
+        stats.lowStockItems.isNotEmpty;
   }
 
   Widget _buildEmptyDataState(BuildContext context) {
@@ -227,9 +212,10 @@ class DashboardPage extends StatelessWidget {
                   children: [
                     ElevatedButton.icon(
                       onPressed: () {
-                        // TODO: Navigate to inventory page
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Inventory page coming soon!')),
+                          SnackBar(
+                            content: Text('Inventory page coming soon!'),
+                          ),
                         );
                       },
                       icon: Icon(Icons.add),
@@ -257,195 +243,86 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsCards(DashboardStats stats) {
-    return Row(
+  // Replace the old _buildStatsCards method with this new one
+  Widget _buildStatsGrid(
+    BuildContext context,
+    DashboardStats stats, {
+    bool isMobile = false,
+  }) {
+    // Determine the number of columns and the aspect ratio based on screen size
+    final int crossAxisCount = isMobile ? 2 : 4;
+    final double childAspectRatio = isMobile ? 1.4 : 1.2;
+
+    return GridView.count(
+      crossAxisCount: crossAxisCount,
+      childAspectRatio: childAspectRatio,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      shrinkWrap: true, // Important to use inside a SingleChildScrollView
+      physics:
+          const NeverScrollableScrollPhysics(), // Disable GridView's own scrolling
       children: [
-        Expanded(
-          child: DashboardCard(
-            title: 'Sales This Month',
-            value: '\$${NumberFormat('#,##0.00').format(stats.totalSales)}',
-            icon: Icons.trending_up,
-            color: AppColors.success,
-          ),
+        DashboardCard(
+          title: 'Sales This Month',
+          value: '\$${NumberFormat('#,##0.00').format(stats.totalSales)}',
+          icon: Icons.trending_up,
+          color: AppColors.success,
         ),
-        SizedBox(width: 16),
-        Expanded(
-          child: DashboardCard(
-            title: 'New Orders',
-            value: '${stats.newOrders}',
-            icon: Icons.shopping_cart,
-            color: AppColors.secondary,
-          ),
+        DashboardCard(
+          title: 'New Orders',
+          value: '${stats.newOrders}',
+          icon: Icons.shopping_cart,
+          color: AppColors.secondary,
         ),
-        SizedBox(width: 16),
-        Expanded(
-          child: DashboardCard(
-            title: 'Pending Orders',
-            value: '${stats.pendingOrders}',
-            icon: Icons.pending,
-            color: AppColors.warning,
-          ),
+        DashboardCard(
+          title: 'Pending Orders',
+          value: '${stats.pendingOrders}',
+          icon: Icons.pending,
+          color: AppColors.warning,
         ),
-        SizedBox(width: 16),
-        Expanded(
-          child: DashboardCard(
-            title: 'Inventory Alert',
-            value: '${stats.lowStockItems.length}',
-            icon: Icons.warning,
-            color: AppColors.error,
-          ),
+        DashboardCard(
+          title: 'Inventory Alert',
+          value: '${stats.lowStockItems.length}',
+          icon: Icons.warning,
+          color: AppColors.error,
         ),
       ],
     );
   }
 
-  Widget _buildContentCards(DashboardStats stats) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: stats.topItems.isNotEmpty 
-            ? TopItemsCard(items: stats.topItems)
-            : _buildEmptyCard(
-                'Top Selling Items',
-                'No sales data yet',
-                Icons.trending_up,
-              ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          child: stats.lowStockItems.isNotEmpty 
-            ? LowStockCard(items: stats.lowStockItems)
-            : _buildEmptyCard(
-                'Low Stock Alert',
-                'All items in stock',
-                Icons.check_circle,
-                color: AppColors.success,
-              ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAdditionalCards(DashboardStats stats) {
-    return Row(
-      children: [
-        Expanded(
-          child: Card(
-            elevation: 2,
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Sales Report',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  SizedBox(
-                    height: 200,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.bar_chart,
-                            size: 48,
-                            color: AppColors.textMuted,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Chart coming soon',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+  Widget _buildContentCards(DashboardStats stats, {bool isMobile = false}) {
+    final cardChildren = [
+      stats.topItems.isNotEmpty
+          ? TopItemsCard(items: stats.topItems)
+          : _buildEmptyCard(
+              'Top Selling Items',
+              'No sales data yet',
+              Icons.trending_up,
             ),
-          ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          child: Card(
-            elevation: 2,
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Due Payments',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  SizedBox(
-                    height: 200,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${stats.duePaymentsCount}',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: stats.duePaymentsCount > 0 
-                              ? AppColors.error 
-                              : AppColors.success,
-                          ),
-                        ),
-                        Text(
-                          stats.duePaymentsCount > 0 
-                            ? 'Overdue Payments' 
-                            : 'No Overdue Payments',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        if (stats.duePaymentsAmount > 0) ...[
-                          SizedBox(height: 8),
-                          Text(
-                            '\$${NumberFormat('#,##0.00').format(stats.duePaymentsAmount)}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.error,
-                            ),
-                          ),
-                          Text(
-                            'Total Amount',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-                ),
-              ),
+      SizedBox(width: isMobile ? 0 : 16, height: isMobile ? 16 : 0),
+      stats.lowStockItems.isNotEmpty
+          ? LowStockCard(items: stats.lowStockItems)
+          : _buildEmptyCard(
+              'Low Stock Alert',
+              'All items in stock',
+              Icons.check_circle,
+              color: AppColors.success,
             ),
-          ),
-      ],
-    );
-  }
+    ];
 
-  Widget _buildEmptyCard(String title, String message, IconData icon, {Color? color}) {
-    return Card(
+    return isMobile
+        ? Column(mainAxisSize: MainAxisSize.min, children: cardChildren)
+        : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: cardChildren[0]),
+          cardChildren[1],
+          Expanded(child: cardChildren[2]),
+        ]);
+  }
+}
+
+Widget _buildAdditionalCards(DashboardStats stats, {bool isMobile = false}) {
+  final cardChildren = [
+    Card(
       elevation: 2,
       child: Padding(
         padding: EdgeInsets.all(16),
@@ -453,11 +330,8 @@ class DashboardPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              'Sales Report',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 16),
             SizedBox(
@@ -467,13 +341,13 @@ class DashboardPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      icon,
+                      Icons.bar_chart,
                       size: 48,
-                      color: color ?? AppColors.textMuted,
+                      color: AppColors.textMuted,
                     ),
-                    SizedBox(height: 12),
+                    SizedBox(height: 8),
                     Text(
-                      message,
+                      'Chart coming soon',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 14,
@@ -486,6 +360,116 @@ class DashboardPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+    SizedBox(width: isMobile ? 0 : 16, height: isMobile ? 16 : 0),
+    Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Due Payments',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${stats.duePaymentsCount}',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: stats.duePaymentsCount > 0
+                          ? AppColors.error
+                          : AppColors.success,
+                    ),
+                  ),
+                  Text(
+                    stats.duePaymentsCount > 0
+                        ? 'Overdue Payments'
+                        : 'No Overdue Payments',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                  if (stats.duePaymentsAmount > 0) ...[
+                    SizedBox(height: 8),
+                    Text(
+                      '\$${NumberFormat('#,##0.00').format(stats.duePaymentsAmount)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.error,
+                      ),
+                    ),
+                    Text(
+                      'Total Amount',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ];
+
+  return isMobile
+      ? Column(mainAxisSize: MainAxisSize.min, children: cardChildren)
+      : Row(children: [
+        Expanded(child: cardChildren[0]),
+        cardChildren[1], // SizedBox
+        Expanded(child: cardChildren[2]),
+      ]);
+}
+
+Widget _buildEmptyCard(
+  String title,
+  String message,
+  IconData icon, {
+  Color? color,
+}) {
+  return Card(
+    elevation: 2,
+    child: Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          SizedBox(height: 16),
+          SizedBox(
+            height: 200,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 48, color: color ?? AppColors.textMuted),
+                  SizedBox(height: 12),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
