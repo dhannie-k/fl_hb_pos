@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../domain/entities/inventory.dart';
 import '../../bloc/inventory/inventory_bloc.dart';
 import '../../bloc/inventory/inventory_state.dart';
 import '../../bloc/inventory/inventory_event.dart';
+import '../../pages/inventory_item_detail_page.dart';
 
 class StockTab extends StatefulWidget {
   const StockTab({super.key});
@@ -13,10 +15,60 @@ class StockTab extends StatefulWidget {
 }
 
 class _StockTabState extends State<StockTab> {
+  String searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  List<InventoryItem> _allItems = [];
+  List<InventoryItem> _filteredItems = [];
   @override
   void initState() {
     super.initState();
     context.read<InventoryBloc>().add(const LoadInventory());
+  }
+
+  void _applyFilters() {
+    _filteredItems = _allItems.where((item) {
+      if (searchQuery.isNotEmpty) {
+        final q = searchQuery.toLowerCase();
+        return item.productName.toLowerCase().contains(q) ||
+            (item.brand?.toLowerCase().contains(q) ?? false) ||
+            item.specification.toLowerCase().contains(q) ||
+            (item.color?.toLowerCase().contains(q) ?? false);
+      }
+      return true;
+    }).toList();
+  }
+
+  void _showAdjustStockDialog(InventoryItem item) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Adjust Stock'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'New stock quantity'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final qty = int.tryParse(controller.text);
+                if (qty != null) {
+                  context.read<InventoryBloc>().add(AdjustStock(item.itemId, qty));
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -27,14 +79,6 @@ class _StockTabState extends State<StockTab> {
         Expanded(
           child: BlocConsumer<InventoryBloc, InventoryState>(
             listener: (context, state) {
-              if (state is InventoryOperationSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
               if (state is InventoryLoaded && state.message != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -62,7 +106,12 @@ class _StockTabState extends State<StockTab> {
               }
 
               if (state is InventoryLoaded) {
-                final products = _groupByProduct(state.items);
+                _allItems = state.items;
+                _applyFilters(); // Apply local filter
+                final products = _groupByProduct(_filteredItems);
+                if (products.isEmpty) {
+                  return _buildEmptyState(context);
+                }
                 if (products.isEmpty) {
                   return _buildEmptyState(context);
                 }
@@ -86,9 +135,27 @@ class _StockTabState extends State<StockTab> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Stock', style: Theme.of(context).textTheme.headlineSmall),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search stock...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                  _applyFilters();
+                });
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -188,21 +255,71 @@ class _StockTabState extends State<StockTab> {
       dense: true,
       title: Text('${item.specification} ${item.color ?? ""}'),
       subtitle: Text('UoM: ${item.unitOfMeasure}'),
-      trailing: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Qty: ${item.stock}',
-            style: TextStyle(fontWeight: FontWeight.bold, color: stockColor),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Qty: ${item.stock}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: stockColor,
+                ),
+              ),
+              Text(
+                'Min: ${item.minimumStock ?? 0}',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              ),
+            ],
           ),
-          Text(
-            'Min: ${item.minimumStock ?? 0}',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'adjust':
+                  _showAdjustStockDialog(item);
+                  break;
+                case 'movements':
+                  context.push('/inventory/items/${item.itemId}/movements');
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'adjust',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, size: 16),
+                    SizedBox(width: 8),
+                    Text('Adjust Stock'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'movements',
+                child: Row(
+                  children: [
+                    Icon(Icons.history, size: 16),
+                    SizedBox(width: 8),
+                    Text('View Movements'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
       onTap: () {
-        // TODO: open detail or stock movement
+        // Open item detail page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InventoryItemDetailPage(itemId: item.itemId),
+          ),
+        );
       },
     );
   }

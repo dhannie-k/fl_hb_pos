@@ -46,3 +46,17 @@ class ProductOperationSuccess extends ProductState {
   @override
   List<Object?> get props => [message];
 }
+
+class ProductOperationError extends ProductState {
+  final String message;
+  const ProductOperationError(this.message);
+}
+
+class ProductDisplayDetailLoaded extends ProductState {
+  final ProductDisplayItem product;
+
+  const ProductDisplayDetailLoaded(this.product);
+
+  @override
+  List<Object?> get props => [product];
+}

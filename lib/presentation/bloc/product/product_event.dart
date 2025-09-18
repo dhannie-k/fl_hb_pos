@@ -75,3 +75,14 @@ class DeleteProductItem extends ProductEvent {
   @override
   List<Object?> get props => [productItemId];
 }
+
+
+class LoadProductDisplayDetail extends ProductEvent {
+  final int productId;
+  const LoadProductDisplayDetail(this.productId);
+
+  @override
+  List<Object?> get props => [productId];
+}
+
+

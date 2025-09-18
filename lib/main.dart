@@ -24,7 +24,7 @@ import 'domain/repositories/product_service.dart';
 // Inventory imports
 import 'presentation/bloc/inventory/inventory_bloc.dart';
 import 'presentation/bloc/inventory/inventory_event.dart';
-
+import 'data/repositories/inventory_repository_impl.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -44,6 +44,7 @@ class MyApp extends StatelessWidget {
     // Create datasource instance
     final supabaseDatasource = SupabaseDatasource();
     final productRepository = ProductRepositoryImpl(supabaseDatasource);
+    final inventoryRepository = InventoryRepositoryImpl(supabaseDatasource);
     final productService = ProductService(productRepository);
 
     return MultiBlocProvider(
@@ -66,7 +67,7 @@ class MyApp extends StatelessWidget {
         // InventoryBloc
         BlocProvider(
           create: (context) =>
-              InventoryBloc(productRepository)
+              InventoryBloc(inventoryRepository)
                 ..add(LoadInventory()), // dispatch on creation
         ),
 

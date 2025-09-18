@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hb_pos_inv/domain/repositories/product_service.dart';
+import 'package:hb_pos_inv/presentation/pages/product_detail_page.dart';
 import '../pages/main_layout.dart';
 import '../pages/dashboard_page.dart';
 import '../pages/inventory_page.dart';
 import '../pages/add_product_page.dart';
 import '../pages/edit_product_page.dart';
 import '../pages/add_product_item_page.dart';
+import '../pages/inventory_item_detail_page.dart';
+import '../pages/inventory_item_movement_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
 
@@ -14,9 +18,7 @@ class AppRouter {
     initialLocation: RoutePaths.dashboard,
     routes: [
       ShellRoute(
-        builder: (context, state, child) {
-          return MainLayout(child: child);
-        },
+        builder: (context, state, child) => MainLayout(child: child),
         routes: [
           GoRoute(
             path: RoutePaths.dashboard,
@@ -35,33 +37,56 @@ class AppRouter {
             ),
           ),
           GoRoute(
-            path: '/inventory/products/add',
-            name: 'addProduct', // Add a name for consistency
+            path: RoutePaths.productAdd,
+            name: RouteNames.addProduct,
             pageBuilder: (context, state) => NoTransitionPage(
               key: state.pageKey,
               child: AddProductPage(
-                // Extract preselectedCategoryId from query parameters if needed
-                preselectedCategoryId:
-                    state.uri.queryParameters['categoryId'] != null
+                preselectedCategoryId: state.uri.queryParameters['categoryId'] != null
                     ? int.tryParse(state.uri.queryParameters['categoryId']!)
                     : null,
               ),
             ),
           ),
           GoRoute(
-            path: '/inventory/products/edit/:id',
+            path: RoutePaths.productEdit,
             builder: (context, state) => EditProductPage(
               productId: int.parse(state.pathParameters['id']!),
             ),
           ),
           GoRoute(
-  path: '/inventory/products/:id/add-item',
-  builder: (context, state) => AddProductItemPage(
-    productId: int.parse(state.pathParameters['id']!),
-  ),
-),
-
-          // Add other routes as needed
+            path: RoutePaths.productAddItem,
+            builder: (context, state) {
+              final product = state.extra as ProductDisplayItem;
+              return AddProductItemPage(
+                productId: int.parse(state.pathParameters['id']!),
+                productName: product.name,
+              );
+            },
+          ),
+          GoRoute(
+            path: RoutePaths.inventoryItemDetail,
+            name: 'inventoryItemDetail',
+            builder: (context, state) {
+              final itemId = int.parse(state.pathParameters['id']!);
+              return InventoryItemDetailPage(itemId: itemId);
+            },
+          ),
+          GoRoute(
+            path: RoutePaths.productView,
+            builder: (context, state) {
+              final productId = int.parse(state.pathParameters['id']!);
+              return ProductDetailPage(productId: productId);
+            },
+          ),
+          GoRoute(
+            path: RoutePaths.inventoryItemMovements,
+            name: 'inventoryItemMovements',
+            builder: (context, state) {
+              final itemId = int.parse(state.pathParameters['id']!);
+              return InventoryItemMovementsPage(itemId: itemId);
+            },
+          ),
         ],
       ),
     ],
@@ -79,10 +104,11 @@ class AppRouter {
         return 'Dashboard';
       case RoutePaths.inventory:
         return 'Inventory';
-      case '/inventory/products/add':
+      case RoutePaths.productAdd:
         return 'Add Product';
       default:
         return 'Dashboard';
     }
   }
 }
+

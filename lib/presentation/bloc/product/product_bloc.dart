@@ -3,11 +3,10 @@ import '../../../domain/repositories/product_service.dart';
 import 'product_event.dart';
 import 'product_state.dart';
 
-
 class ProductBloc extends Bloc<ProductEvent, ProductState> {
   final ProductService _productService;
 
-  ProductBloc({required ProductService productService}) 
+  ProductBloc({required ProductService productService})
     : _productService = productService,
       super(const ProductInitial()) {
     on<LoadProducts>(_onLoadProducts);
@@ -18,6 +17,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     on<UpdateProductItem>(_onUpdateProductItem);
     on<DeleteProduct>(_onDeleteProduct);
     on<DeleteProductItem>(_onDeleteProductItem);
+    on<LoadProductDisplayDetail>(_onLoadProductDisplayDetail);
   }
   ProductService get productService => _productService;
 
@@ -40,11 +40,15 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   ) async {
     try {
       emit(const ProductLoading());
-      final products = await _productService.searchProductDisplayItems(event.query);
-      emit(ProductLoaded(
-        products: products,
-        searchQuery: event.query.isNotEmpty ? event.query : null,
-      ));
+      final products = await _productService.searchProductDisplayItems(
+        event.query,
+      );
+      emit(
+        ProductLoaded(
+          products: products,
+          searchQuery: event.query.isNotEmpty ? event.query : null,
+        ),
+      );
     } catch (e) {
       emit(ProductError(e.toString()));
     }
@@ -69,17 +73,41 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     Emitter<ProductState> emit,
   ) async {
     try {
-      if (event.initialQuantity > 0){
-      await _productService.createProductItemWithInitialQuantity(event.productItem, event.initialQuantity);
+      if (event.initialQuantity > 0) {
+        await _productService.createProductItemWithInitialQuantity(
+          event.productItem,
+          event.initialQuantity,
+        );
 
-      emit(const ProductOperationSuccess('Product item with initial stock added successfully'));
-      }else{
+        emit(
+          const ProductOperationSuccess(
+            'Product item with initial stock added successfully',
+          ),
+        );
+      } else {
         await _productService.createProductItem(event.productItem);
-      emit(const ProductOperationSuccess('Product item added successfully'));
+        emit(const ProductOperationSuccess('Product item added successfully'));
       }
-      add(const LoadProducts()); // Reload products
+      add(LoadProducts()); // Reload products
+      if (state is ProductLoaded) {
+        emit(state);
+      } else {
+        final products = await _productService.getProductDisplayItems();
+        emit(ProductLoaded(products: products));
+      }
     } catch (e) {
-      emit(ProductError(e.toString()));
+      final errorMsg = e.toString();
+      if (errorMsg.contains('unique_product_spec')) {
+        emit(
+          ProductOperationError(
+            'This specification already exist for this product',
+          ),
+        );
+      } else {
+        emit(ProductOperationError('Failed to add product item: $errorMsg'));
+      }
+      final products = await _productService.getProductDisplayItems();
+      emit(ProductLoaded(products: products));
     }
   }
 
@@ -134,4 +162,21 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       emit(ProductError(e.toString()));
     }
   }
+
+  Future<void> _onLoadProductDisplayDetail(
+  LoadProductDisplayDetail event,
+  Emitter<ProductState> emit,
+) async {
+  try {
+    emit(const ProductLoading());
+    final product = await _productService.getProductDisplayItemsById(event.productId);
+    if (product == null) {
+      emit(const ProductError('Product not found'));
+      return;
+    }
+    emit(ProductDisplayDetailLoaded(product));
+  } catch (e) {
+    emit(ProductError('Failed to load product detail: $e'));
+  }
+}
 }

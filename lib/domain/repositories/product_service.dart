@@ -24,7 +24,7 @@ class ProductDisplayItem {
   String get searchableText =>
       '$name ${description ?? ''} ${brand ?? ''}'.toLowerCase();
 
-      /// Combine name and brand for UI
+  /// Combine name and brand for UI
   String get displayName {
     if (brand == null || brand!.trim().isEmpty) {
       return name;
@@ -45,6 +45,16 @@ class ProductService {
       return _mapToProductDisplayItems(productsWithItems);
     } catch (e) {
       throw Exception('Failed to get product display items: $e');
+    }
+  }
+
+  Future<ProductDisplayItem?> getProductDisplayItemsById(int productId) async {
+    final productsWithItems = await _repository.getProductsWithItems();
+    final all = _mapToProductDisplayItems(productsWithItems);
+    try {
+      return all.firstWhere((p) => p.productId == productId);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -86,7 +96,7 @@ class ProductService {
         brand: productData['brand'],
         categoryId: productData['category_id'],
         items: itemsData.map((i) => ProductItem.fromJson(i)).toList(),
-        imageUrl: productData['image_url']
+        imageUrl: productData['image_url'],
       );
     }).toList();
   }

@@ -33,81 +33,95 @@ class _ProductTabState extends State<ProductTab> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildHeader(),
-        _buildSearchSection(), // Separate search section
-        Expanded(
-          child: BlocConsumer<ProductBloc, ProductState>(
-            listener: (context, state) {
-              if (state is ProductOperationSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            },
-            builder: (context, state) {
-              if (state is ProductLoading) {
-                return const LoadingWidget();
-              }
+  // product_tab.dart
 
-              if (state is ProductError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error, size: 64, color: Colors.red.shade300),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading products',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        state.message,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => context.read<ProductBloc>().add(
-                          const LoadProducts(),
-                        ),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                );
-              }
+@override
+Widget build(BuildContext context) {
+  return Column(
+    children: [
+      _buildHeader(),
+      _buildSearchSection(), // Separate search section
+      Expanded(
+        child: BlocConsumer<ProductBloc, ProductState>(
+          listener: (context, state) {
+            if (state is ProductOperationSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+            // You can also listen for ProductOperationError here if needed
+          },
+          builder: (context, state) {
+            // 1. When a new list of products is loaded, update our local copy.
+            if (state is ProductLoaded) {
+              _allProducts = state.products;
+            }
 
-              if (state is ProductLoaded) {
-                _allProducts = state.products;
-                _applyFilters();
-                return _buildProductGrid(_filteredProducts);
-              }
+            // 2. If we are loading for the very first time (no products yet), show a loading spinner.
+            if (state is ProductLoading && _allProducts.isEmpty) {
+              return const LoadingWidget();
+            }
 
-              return const Center(
+            // 3. If there's an error, display the error message.
+            if (state is ProductError) {
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.inventory_2, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text('No products available'),
-                    Text('Start by adding some products to your inventory'),
+                    Icon(Icons.error, size: 64, color: Colors.red.shade300),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading products',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.read<ProductBloc>().add(
+                        const LoadProducts(),
+                      ),
+                      child: const Text('Retry'),
+                    ),
                   ],
                 ),
               );
-            },
-          ),
+            }
+
+            // 4. If we have products in our local list, display them.
+            // This is the key change: it no longer checks if the *current* state is ProductLoaded.
+            // This ensures the list persists even when the BLoC's state changes to something else
+            // like ProductDisplayDetailLoaded on another screen.
+            if (_allProducts.isNotEmpty) {
+              _applyFilters();
+              return _buildProductGrid(_filteredProducts);
+            }
+
+            // 5. If none of the above conditions are met, it means there are truly no products.
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inventory_2, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text('No products available'),
+                  Text('Start by adding some products to your inventory'),
+                ],
+              ),
+            );
+          },
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   void _applyFilters() {
     _filteredProducts = _allProducts.where((product) {
@@ -425,6 +439,7 @@ class _ProductTabState extends State<ProductTab> {
                           case 'add_item':
                             context.push(
                               '/inventory/products/${product.productId}/add-item',
+                              extra: product,
                             );
                             break;
                           case 'delete':

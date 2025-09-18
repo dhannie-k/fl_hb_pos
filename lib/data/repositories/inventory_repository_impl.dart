@@ -25,4 +25,12 @@ class InventoryRepositoryImpl implements InventoryRepository {
       throw Exception('Failed to fetch inventory: $e');
     }
   }
+  
+  @override
+  Future<void> adjustStock(int itemId, int newQuantity) async {
+  await datasource.client.from('inventory')
+      .update({'stock': newQuantity})
+      .eq('product_item_id', itemId);
+}
+
 }

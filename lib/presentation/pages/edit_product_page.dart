@@ -62,7 +62,7 @@ class _EditProductPageState extends State<EditProductPage> {
           _nameController.text = product.name;
           _descriptionController.text = product.description ?? '';
           _brandController.text = product.brand ?? '';
-          _imageUrlController.text = ''; // You might want to add imageUrl to Product entity
+          _imageUrlController.text = product.imageUrl ?? ''; // You might want to add imageUrl to Product entity
           _selectedCategoryId = product.categoryId;
           _hasChanges = false;
         });
@@ -98,7 +98,7 @@ class _EditProductPageState extends State<EditProductPage> {
     
     final hasChanges = _nameController.text != _originalProduct!.name ||
                       _descriptionController.text != (_originalProduct!.description ?? '') ||
-                      _brandController.text != (_originalProduct!.brand ?? '') ||
+                      _brandController.text != (_originalProduct!.brand ?? '') || _imageUrlController.text != (_originalProduct!.imageUrl ?? '') ||
                       _selectedCategoryId != _originalProduct!.categoryId;
     
     if (hasChanges != _hasChanges) {
@@ -471,7 +471,8 @@ class _EditProductPageState extends State<EditProductPage> {
       brand: _brandController.text.trim().isEmpty 
           ? null 
           : _brandController.text.trim(),
-      categoryId: _selectedCategoryId,     
+      categoryId: _selectedCategoryId,
+      imageUrl: _imageUrlController.text.trim().isEmpty? _originalProduct!.imageUrl : _imageUrlController.text.trim(),     
     );
 
     context.read<ProductBloc>().add(UpdateProduct(updatedProduct));
@@ -483,7 +484,7 @@ class _EditProductPageState extends State<EditProductPage> {
         _nameController.text = _originalProduct!.name;
         _descriptionController.text = _originalProduct!.description ?? '';
         _brandController.text = _originalProduct!.brand ?? '';
-        _imageUrlController.text = '';
+        _imageUrlController.text = _originalProduct!.imageUrl ?? '';
         _selectedCategoryId = _originalProduct!.categoryId;
         _hasChanges = false;
       });

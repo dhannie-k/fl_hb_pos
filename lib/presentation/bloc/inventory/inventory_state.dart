@@ -17,16 +17,17 @@ class InventoryLoaded extends InventoryState {
   final String? message;
   const InventoryLoaded(this.items, {this.message});
 }
-class InventoryOperationSuccess extends InventoryState {
-  final String message;
-  const InventoryOperationSuccess(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
 
 class InventoryError extends InventoryState {
   final String message;
   const InventoryError(this.message);
 }
+
+class InventoryItemLoaded extends InventoryState {
+  final InventoryItem item;
+  const InventoryItemLoaded(this.item);
+
+  @override
+  List<Object?> get props => [item];
+}
+

@@ -8,8 +8,9 @@ import '../../domain/entities/product.dart';
 
 class AddProductItemPage extends StatefulWidget {
   final int productId;
+  final String productName;
 
-  const AddProductItemPage({super.key, required this.productId});
+  const AddProductItemPage({super.key, required this.productId, required this.productName});
 
   @override
   State<AddProductItemPage> createState() => _AddProductItemPageState();
@@ -63,7 +64,7 @@ class _AddProductItemPageState extends State<AddProductItemPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Product Item')),
+      appBar: AppBar(title: Text('Add Product Item for ${widget.productName}')),
       body: BlocListener<ProductBloc, ProductState>(
         listener: (context, state) {
           if (state is ProductLoading) {
@@ -71,7 +72,11 @@ class _AddProductItemPageState extends State<AddProductItemPage> {
           } else {
             setState(() => _isLoading = false);
           }
-
+          if (state is ProductOperationError) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          }
           if (state is ProductOperationSuccess) {
             ScaffoldMessenger.of(
               context,
