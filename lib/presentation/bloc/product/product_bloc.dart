@@ -69,47 +69,34 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   }
 
   Future<void> _onAddProductItem(
-    AddProductItem event,
-    Emitter<ProductState> emit,
-  ) async {
-    try {
-      if (event.initialQuantity > 0) {
-        await _productService.createProductItemWithInitialQuantity(
-          event.productItem,
-          event.initialQuantity,
-        );
+  AddProductItem event,
+  Emitter<ProductState> emit,
+) async {
+  try {
+    await _productService.createProductItemWithInitialQuantity(
+      event.productItem,
+      event.initialQuantity,
+    );
 
-        emit(
-          const ProductOperationSuccess(
-            'Product item with initial stock added successfully',
-          ),
-        );
-      } else {
-        await _productService.createProductItem(event.productItem);
-        emit(const ProductOperationSuccess('Product item added successfully'));
-      }
-      add(LoadProducts()); // Reload products
-      if (state is ProductLoaded) {
-        emit(state);
-      } else {
-        final products = await _productService.getProductDisplayItems();
-        emit(ProductLoaded(products: products));
-      }
-    } catch (e) {
-      final errorMsg = e.toString();
-      if (errorMsg.contains('unique_product_spec')) {
-        emit(
-          ProductOperationError(
-            'This specification already exist for this product',
-          ),
-        );
-      } else {
-        emit(ProductOperationError('Failed to add product item: $errorMsg'));
-      }
-      final products = await _productService.getProductDisplayItems();
-      emit(ProductLoaded(products: products));
+    emit(ProductOperationSuccess('Product item added successfully', stayOnPage: event.stayOnPage,));
+
+    // Trigger product reload — let _onLoadProducts handle the ProductLoaded state
+    add(const LoadProducts());
+  } catch (e) {
+    final errorMsg = e.toString();
+    if (errorMsg.contains('unique_product_spec')) {
+      emit(const ProductOperationError(
+        'This specification already exists for this product',
+      ));
+    } else {
+      emit(ProductOperationError('Failed to add product item: $errorMsg'));
     }
+
+    // optional: reload products on error
+    final products = await _productService.getProductDisplayItems();
+    emit(ProductLoaded(products: products));
   }
+}
 
   Future<void> _onUpdateProduct(
     UpdateProduct event,
@@ -164,19 +151,21 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   }
 
   Future<void> _onLoadProductDisplayDetail(
-  LoadProductDisplayDetail event,
-  Emitter<ProductState> emit,
-) async {
-  try {
-    emit(const ProductLoading());
-    final product = await _productService.getProductDisplayItemsById(event.productId);
-    if (product == null) {
-      emit(const ProductError('Product not found'));
-      return;
+    LoadProductDisplayDetail event,
+    Emitter<ProductState> emit,
+  ) async {
+    try {
+      emit(const ProductLoading());
+      final product = await _productService.getProductDisplayItemsById(
+        event.productId,
+      );
+      if (product == null) {
+        emit(const ProductError('Product not found'));
+        return;
+      }
+      emit(ProductDisplayDetailLoaded(product));
+    } catch (e) {
+      emit(ProductError('Failed to load product detail: $e'));
     }
-    emit(ProductDisplayDetailLoaded(product));
-  } catch (e) {
-    emit(ProductError('Failed to load product detail: $e'));
   }
-}
 }

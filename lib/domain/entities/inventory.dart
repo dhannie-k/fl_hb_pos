@@ -17,7 +17,7 @@ class InventoryItem extends Equatable {
   final String? color;
   final double? unitPrice;
   final int? minimumStock;
-  final int stock;
+  final double stock;
   final DateTime? updatedAt;
 
   const InventoryItem({
@@ -57,7 +57,7 @@ class InventoryItem extends Equatable {
       color: json['color'],
       unitPrice: (json['unit_price'] as num?)?.toDouble(),
       minimumStock: json['minimum_stock'],
-      stock: json['stock'] ?? 0,
+      stock: json['stock'] ?? 0.0,
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : null,

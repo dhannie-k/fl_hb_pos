@@ -40,8 +40,9 @@ class ProductError extends ProductState {
 
 class ProductOperationSuccess extends ProductState {
   final String message;
+  final bool stayOnPage;
 
-  const ProductOperationSuccess(this.message);
+  const ProductOperationSuccess(this.message, {this.stayOnPage = false});
 
   @override
   List<Object?> get props => [message];

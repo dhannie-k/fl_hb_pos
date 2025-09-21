@@ -44,11 +44,11 @@ Widget build(BuildContext context) {
       Expanded(
         child: BlocConsumer<ProductBloc, ProductState>(
           listener: (context, state) {
-            if (state is ProductOperationSuccess) {
+            if (state is ProductOperationSuccess && !state.message.contains('item')) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.amber,
                 ),
               );
             }

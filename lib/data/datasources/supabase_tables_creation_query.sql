@@ -543,3 +543,22 @@ VALUES
     ('12mm', 'pc', 15000, 1), 
     ('14mm', 'pc', 17500, 1),
     ('16mm', 'pc', 19500, 1);
+
+ALTER TABLE inventory ALTER COLUMN stock TYPE NUMERIC(18,4) USING stock::NUMERIC;
+ALTER TABLE stock_movement ALTER COLUMN quantity TYPE NUMERIC(18,4) USING quantity::NUMERIC;
+ALTER TABLE sales_order_items ALTER COLUMN quantity_ordered TYPE NUMERIC(18,4) USING quantity_ordered::NUMERIC;
+ALTER TABLE sales_order_items ALTER COLUMN quantity_delivered TYPE NUMERIC(18,4) USING quantity_delivered::NUMERIC;
+ALTER TABLE purchase_items ALTER COLUMN quantity_ordered TYPE NUMERIC(18,4) USING quantity_ordered::NUMERIC;
+ALTER TABLE sales_item_return ALTER COLUMN quantity_returned TYPE NUMERIC(18,4) USING quantity_returned::NUMERIC;
+ALTER TABLE purchase_item_return ALTER COLUMN quantity_returned TYPE NUMERIC(18,4) USING quantity_returned::NUMERIC;
+ALTER TABLE order_delivery_items ALTER COLUMN quantity_shipped TYPE NUMERIC(18,4) USING quantity_shipped::NUMERIC;
+ALTER TABLE invoice_items ALTER COLUMN quantity TYPE NUMERIC(18,4) USING quantity::NUMERIC;
+
+-- 1) Add column (nullable for now)
+ALTER TABLE public.transactions
+ADD COLUMN created_by UUID;
+
+-- 2) Add FK constraint (optional but recommended)
+ALTER TABLE public.transactions
+ADD CONSTRAINT transactions_created_by_fkey
+FOREIGN KEY (created_by) REFERENCES public.users(id);

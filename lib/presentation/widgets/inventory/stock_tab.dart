@@ -324,8 +324,8 @@ class _StockTabState extends State<StockTab> {
     );
   }
 
-  Color _getStockColor(int stock, int? minStock) {
-    if (minStock != null && stock <= minStock) {
+  Color _getStockColor(double stock, int? minStock) {
+    if (minStock != null && stock <= minStock.toDouble()) {
       return Colors.red;
     } else if (minStock != null && stock <= (minStock * 2)) {
       return Colors.orange;

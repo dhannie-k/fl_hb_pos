@@ -22,7 +22,7 @@ class TopItem {
   final int productId;
   final String name;
   final String specification;
-  final int totalSold;
+  final double totalSold;
 
   TopItem({
     required this.productId,
@@ -36,7 +36,7 @@ class LowStockItem {
   final int productItemId;
   final String name;
   final String specification;
-  final int stock;
+  final double stock;
 
   LowStockItem({
     required this.productItemId,
