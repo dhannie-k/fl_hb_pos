@@ -25,6 +25,15 @@ import 'domain/repositories/product_service.dart';
 import 'presentation/bloc/inventory/inventory_bloc.dart';
 import 'presentation/bloc/inventory/inventory_event.dart';
 import 'data/repositories/inventory_repository_impl.dart';
+
+// Auth 
+import 'presentation/bloc/auth/auth_bloc.dart';
+import 'presentation/bloc/auth/auth_event.dart';
+import 'presentation/bloc/auth/auth_state.dart';
+import 'presentation/pages/login_page.dart';
+import 'presentation/auth_service/auth_repository.dart';
+//import 'package:google_sign_in/google_sign_in.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -33,8 +42,55 @@ void main() async {
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
 
-  runApp(MyApp());
+  runApp(
+    App()
+  );
 }
+// A global accessor is fine for Supabase client
+final supabase = Supabase.instance.client;
+
+class App extends StatelessWidget {
+  const App({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Provide the AuthRepository at the top of the tree
+    return RepositoryProvider(
+      create: (context) => AuthRepository(supabaseClient: supabase),
+      child: BlocProvider(
+        create: (context) => AuthBloc(
+          authRepository: context.read<AuthRepository>(),
+        )..add(AuthAppStarted()), // Check auth status on start
+        child: const RootApp(),
+      ),
+    );
+  }
+}
+
+class RootApp extends StatelessWidget {
+  const RootApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: BlocBuilder<AuthBloc, AuthenState>(
+        builder: (context, state) {
+          if (state is AuthInitial) {
+            return const CircularProgressIndicator(); // Show a loading screen while checking auth
+          }
+          if (state is AuthAuthenticated) {
+            // User is logged in, show the main app
+            return const MyApp();
+          }
+          // Any other state (Unauthenticated, Error) defaults to LoginPage
+          return const LoginPage();
+        },
+      ),
+    );
+  }
+}
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

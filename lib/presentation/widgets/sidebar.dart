@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hb_pos_inv/presentation/bloc/auth/auth_bloc.dart';
+import 'package:hb_pos_inv/presentation/bloc/auth/auth_event.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../router/route_paths.dart';
 
 class Sidebar extends StatelessWidget {
@@ -129,6 +132,11 @@ class Sidebar extends StatelessWidget {
                   isActive: currentLocation.startsWith('/settings'),
                   isMobile: isMobile,
                 ),
+                SizedBox(height: 12,),
+                IconButton(onPressed: () {
+                  context.read<AuthBloc>().add(AuthSignOutRequested());
+                  
+                }, icon: Icon(Icons.logout_outlined))
               ],
             ),
           ),
