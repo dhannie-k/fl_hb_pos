@@ -3,27 +3,29 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {
   final SupabaseClient _supabaseClient;
-  
+
   // Use the singleton instance provided by the package
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   bool _isGoogleSignInInitialized = false;
 
   AuthRepository({required SupabaseClient supabaseClient})
-      : _supabaseClient = supabaseClient;
-  
+    : _supabaseClient = supabaseClient;
+
   // A helper to initialize GoogleSignIn only once
   Future<void> _initializeGoogleSignIn() async {
     if (_isGoogleSignInInitialized) return;
-    
+
     // Your webClientId from Google Cloud Console
     await _googleSignIn.initialize(
-      serverClientId: '620314944174-9sd3ahcsgrsbb39b9g6urf77h9e7s4g1.apps.googleusercontent.com',
+      serverClientId:
+          '620314944174-9sd3ahcsgrsbb39b9g6urf77h9e7s4g1.apps.googleusercontent.com',
     );
     _isGoogleSignInInitialized = true;
   }
 
   /// Stream of authentication state changes.
-  Stream<AuthState> get authStateChanges => _supabaseClient.auth.onAuthStateChange;
+  Stream<AuthState> get authStateChanges =>
+      _supabaseClient.auth.onAuthStateChange;
 
   /// Gets the current authenticated user, if any.
   User? get currentUser => _supabaseClient.auth.currentUser;
@@ -34,8 +36,9 @@ class AuthRepository {
       await _initializeGoogleSignIn();
 
       // Start with a silent sign-in attempt
-      GoogleSignInAccount? googleUser = await _googleSignIn.attemptLightweightAuthentication();
-      
+      GoogleSignInAccount? googleUser = await _googleSignIn
+          .attemptLightweightAuthentication();
+
       // If silent sign-in fails, trigger the interactive sign-in.
       // authenticate() will throw an exception if the user cancels.
       googleUser ??= await _googleSignIn.authenticate();
@@ -48,15 +51,15 @@ class AuthRepository {
       if (idToken == null) {
         throw 'No ID Token found.';
       }
-      
+
       const scopes = ['email', 'profile'];
       // authorizeScopes() will also throw on failure.
-      final authorization = 
+      final authorization =
           await googleUser.authorizationClient.authorizationForScopes(scopes) ??
           await googleUser.authorizationClient.authorizeScopes(scopes);
-          
+
       final accessToken = authorization.accessToken;
-      
+
       // The 'if (accessToken == null)' check is removed as it's unreachable.
 
       final response = await _supabaseClient.auth.signInWithIdToken(
@@ -76,6 +79,10 @@ class AuthRepository {
       print('Generic Sign-In Error: $e');
       throw 'An unexpected error occurred during sign-in.';
     }
+  }
+
+  Future<void> signInWithOAuth() async {
+    await _supabaseClient.auth.signInWithOAuth(OAuthProvider.google);
   }
 
   /// Signs out from both Supabase and Google.

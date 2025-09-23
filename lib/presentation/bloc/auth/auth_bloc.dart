@@ -14,6 +14,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthenState> {
         super(AuthInitial()) {
     on<AuthAppStarted>(_onAppStarted);
     on<AuthSignInWithGoogleRequested>(_onSignInWithGoogle);
+    on<AuthSignInWithOAuthRequested>(_onSignInWithOAuth);
     on<AuthSignOutRequested>(_onSignOut);
     on<AuthUserChanged>(_onUserChanged);
 
@@ -51,6 +52,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthenState> {
     emit(AuthLoading());
     try {
       await _authRepository.signInWithGoogle();
+      // The _authStateSubscription will automatically trigger a state change to AuthAuthenticated
+    } catch (e) {
+      emit(AuthError(e.toString()));
+      // Ensure we revert to unauthenticated state after an error
+      emit(AuthUnauthenticated());
+    }
+  }
+  Future<void> _onSignInWithOAuth(
+      AuthSignInWithOAuthRequested event, Emitter<AuthenState> emit) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.signInWithOAuth();
       // The _authStateSubscription will automatically trigger a state change to AuthAuthenticated
     } catch (e) {
       emit(AuthError(e.toString()));

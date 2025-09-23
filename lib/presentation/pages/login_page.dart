@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/auth/auth_state.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -35,7 +37,13 @@ class LoginPage extends StatelessWidget {
                 label: const Text('Sign in with Google'),
                 onPressed: () {
                   // Dispatch the sign-in event to the BLoC
+                  if(!kIsWeb && (
+                    Platform.isAndroid || Platform.isIOS
+                  )){
                   context.read<AuthBloc>().add(AuthSignInWithGoogleRequested());
+                  }else{
+                    context.read<AuthBloc>().add(AuthSignInWithOAuthRequested());
+                  }
                 },
               );
             },
