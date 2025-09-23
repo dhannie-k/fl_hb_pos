@@ -39,37 +39,58 @@ class _StockTabState extends State<StockTab> {
   }
 
   void _showAdjustStockDialog(InventoryItem item) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Adjust Stock'),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'New stock quantity'),
+  final qtyController = TextEditingController();
+  final noteController = TextEditingController();
+  String direction = 'out';
+  final blocContext = context;
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Adjust Stock'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: qtyController,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Quantity'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final qty = int.tryParse(controller.text);
-                if (qty != null) {
-                  context.read<InventoryBloc>().add(AdjustStock(item.itemId, qty));
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+          DropdownButtonFormField<String>(
+            initialValue: direction,
+            onChanged: (val) => direction = val!,
+            items: const [
+              DropdownMenuItem(value: 'out', child: Text('Deduct Stock')),
+              DropdownMenuItem(value: 'in', child: Text('Add Stock')),
+            ],
+          ),
+          TextField(
+            controller: noteController,
+            decoration: const InputDecoration(labelText: 'Note (optional)'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final qty = double.tryParse(qtyController.text);
+            if (qty != null && qty > 0) {
+              blocContext.read<InventoryBloc>().add(
+                AdjustStock(item.itemId, qty, direction, note: noteController.text),
+              );
+            }
+            Navigator.pop(context);
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

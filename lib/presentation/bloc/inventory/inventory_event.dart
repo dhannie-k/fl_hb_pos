@@ -17,12 +17,20 @@ class SearchInventory extends InventoryEvent {
   const SearchInventory(this.query);
 }
 
-class AdjustStock extends InventoryEvent {
+/* class AdjustStock extends InventoryEvent {
   final int itemId;
   final int newQuantity;
   const AdjustStock(this.itemId, this.newQuantity);
 
   List<Object?> get props => [itemId, newQuantity];
+} */
+class AdjustStock extends InventoryEvent {
+  final int itemId;
+  final double quantity;
+  final String direction; // "in" or "out"
+  final String? note;
+
+  const AdjustStock(this.itemId, this.quantity, this.direction, {this.note});
 }
 
 class LoadInventoryItem extends InventoryEvent {

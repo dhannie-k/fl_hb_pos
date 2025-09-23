@@ -69,7 +69,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       // optimistic update (optional)
       emit(InventoryLoading());
 
-      await repository.adjustStock(event.itemId, event.newQuantity);
+      await repository.adjustStock(event.itemId, event.quantity, event.direction,note: event.note);
 
       // reload items after adjustment
       final items = await repository.getInventory();
