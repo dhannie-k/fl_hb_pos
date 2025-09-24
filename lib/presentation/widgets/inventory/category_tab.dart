@@ -75,24 +75,86 @@ class _CategoryTabState extends State<CategoryTab> {
   }
 
   Widget _buildCompactAddSection() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.divider)),
-      ),
-      child: Column(
-        children: [
-          if (!_isFormExpanded) 
-            _buildCollapsedAddButton()
-          else
-            _buildExpandedAddForm(),
-        ],
-      ),
-    );
-  }
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      border: Border(bottom: BorderSide(color: AppColors.divider)),
+    ),
+    child: Column(
+      children: [
+        if (!_isFormExpanded)
+          Row(
+            children: [
+              const Icon(Icons.category, size: 20, color: AppColors.accent),
+              const SizedBox(width: 8),
+              const Text(
+                'Categories',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isFormExpanded = true;
+                  });
+                },
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Add Category'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  minimumSize: const Size(0, 32),
+                  textStyle: const TextStyle(fontSize: 13),
+                ),
+              ),
+            ],
+          )
+        else
+          _buildExpandedAddForm(),
+          TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search categories...',
+                hintStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                prefixIcon: const Icon(Icons.search, size: 16, color: AppColors.textSecondary),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        onPressed: _clearSearch,
+                        icon: const Icon(Icons.clear, size: 16),
+                      )
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: AppColors.accent),
+                ),
+              ),
+              style: const TextStyle(fontSize: 12),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                  _currentPage = 1;
+                });
+              },
+            ),
+      ],
+    ),
+  );
+}
 
-  Widget _buildCollapsedAddButton() {
+
+  /* Widget _buildCollapsedAddButton() {
     return Row(
       children: [
         Icon(Icons.category, size: 20, color: AppColors.accent),
@@ -134,7 +196,7 @@ class _CategoryTabState extends State<CategoryTab> {
         ),
       ],
     );
-  }
+  } */
 
   Widget _buildExpandedAddForm() {
     return BlocBuilder<CategoryBloc, CategoryState>(
@@ -278,105 +340,84 @@ class _CategoryTabState extends State<CategoryTab> {
   }
 
   Widget _buildListHeader() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border(bottom: BorderSide(color: AppColors.divider)),
-      ),
-      child: BlocBuilder<CategoryBloc, CategoryState>(
-        builder: (context, state) {
-          final allCategories = _getCategoriesFromState(state);
-          final filteredCategories = _getFilteredCategories(allCategories);
-          //final topLevelCategories = _getTopLevelCategories(filteredCategories);
-          
-          return Row(
-            children: [
-              Text(
-                _searchQuery.isEmpty 
-                  ? 'All Categories (${allCategories.length})'
-                  : 'Found (${filteredCategories.length})',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Spacer(),
-              
-              // Items per page selector
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: DropdownButton<int>(
-                  value: _itemsPerPage,
-                  underline: SizedBox(),
-                  style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
-                  items: [5, 10, 20, 50].map((value) {
-                    return DropdownMenuItem<int>(
-                      value: value,
-                      child: Text('$value per page'),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _itemsPerPage = value;
-                        _currentPage = 1; // Reset to first page
-                      });
-                    }
-                  },
-                ),
-              ),
-              
-              SizedBox(width: 12),
-              
-              // Search field
-              SizedBox(
-                width: 200,
-                height: 32,
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search categories...',
-                    hintStyle: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                    prefixIcon: Icon(Icons.search, size: 16, color: AppColors.textSecondary),
-                    suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          onPressed: _clearSearch,
-                          icon: Icon(Icons.clear, size: 16),
-                          padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(minWidth: 24, minHeight: 24),
-                        )
-                      : null,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: BorderSide(color: AppColors.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: BorderSide(color: AppColors.accent),
-                    ),
+  final bool isMobile = MediaQuery.of(context).size.width < 768;
+
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+      color: AppColors.background,
+      border: Border(bottom: BorderSide(color: AppColors.divider)),
+    ),
+    child: BlocBuilder<CategoryBloc, CategoryState>(
+      builder: (context, state) {
+        final allCategories = _getCategoriesFromState(state);
+        final filteredCategories = _getFilteredCategories(allCategories);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Row 1: Title + per-page selector + refresh (desktop only)
+            Row(
+              children: [
+                Text(
+                  _searchQuery.isEmpty
+                      ? 'All Categories (${allCategories.length})'
+                      : 'Found (${filteredCategories.length})',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
-                  style: TextStyle(fontSize: 12),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.toLowerCase();
-                      _currentPage = 1; // Reset to first page when searching
-                    });
-                  },
                 ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: DropdownButton<int>(
+                    value: _itemsPerPage,
+                    underline: const SizedBox(),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                    items: [5, 10, 20, 50].map((value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text('$value per page'),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _itemsPerPage = value;
+                          _currentPage = 1;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                if (!isMobile) ...[
+                  const SizedBox(width: 12),
+                  IconButton(
+                    onPressed: () {
+                      context.read<CategoryBloc>().add(RefreshCategories());
+                    },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    tooltip: 'Refresh Categories',
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Row 2: search under title
+            
+          ],
+        );
+      },
+    ),
+  );
+}
+
   
   Widget _buildCategoriesList() {
     return BlocBuilder<CategoryBloc, CategoryState>(

@@ -6,6 +6,7 @@ import '../../bloc/inventory/inventory_bloc.dart';
 import '../../bloc/inventory/inventory_state.dart';
 import '../../bloc/inventory/inventory_event.dart';
 import '../../pages/inventory_item_detail_page.dart';
+import '../../pages/stock_movements_page.dart';
 
 class StockTab extends StatefulWidget {
   const StockTab({super.key});
@@ -39,64 +40,69 @@ class _StockTabState extends State<StockTab> {
   }
 
   void _showAdjustStockDialog(InventoryItem item) {
-  final qtyController = TextEditingController();
-  final noteController = TextEditingController();
-  String direction = 'out';
-  final blocContext = context;
+    final qtyController = TextEditingController();
+    final noteController = TextEditingController();
+    String direction = 'out';
+    final blocContext = context;
 
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Adjust Stock'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: qtyController,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Quantity'),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Adjust Stock'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: qtyController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Quantity'),
+            ),
+            DropdownButtonFormField<String>(
+              initialValue: direction,
+              onChanged: (val) => direction = val!,
+              items: const [
+                DropdownMenuItem(value: 'out', child: Text('Deduct Stock')),
+                DropdownMenuItem(value: 'in', child: Text('Add Stock')),
+              ],
+            ),
+            TextField(
+              controller: noteController,
+              decoration: const InputDecoration(labelText: 'Note (optional)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          DropdownButtonFormField<String>(
-            initialValue: direction,
-            onChanged: (val) => direction = val!,
-            items: const [
-              DropdownMenuItem(value: 'out', child: Text('Deduct Stock')),
-              DropdownMenuItem(value: 'in', child: Text('Add Stock')),
-            ],
-          ),
-          TextField(
-            controller: noteController,
-            decoration: const InputDecoration(labelText: 'Note (optional)'),
+          ElevatedButton(
+            onPressed: () {
+              final qty = double.tryParse(qtyController.text);
+              if (qty != null && qty > 0) {
+                blocContext.read<InventoryBloc>().add(
+                  AdjustStock(
+                    item.itemId,
+                    qty,
+                    direction,
+                    note: noteController.text,
+                  ),
+                );
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final qty = double.tryParse(qtyController.text);
-            if (qty != null && qty > 0) {
-              blocContext.read<InventoryBloc>().add(
-                AdjustStock(item.itemId, qty, direction, note: noteController.text),
-              );
-            }
-            Navigator.pop(context);
-          },
-          child: const Text('Save'),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildHeader(),
+        _buildHeader(context),
         Expanded(
           child: BlocConsumer<InventoryBloc, InventoryState>(
             listener: (context, state) {
@@ -152,36 +158,79 @@ class _StockTabState extends State<StockTab> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
+
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search stock...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Inventory Stock",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                  _applyFilters();
-                });
-              },
-            ),
+              isMobile
+                  ? IconButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const StockMovementsPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.history),
+                    )
+                  : TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const StockMovementsPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.history),
+                      label: const Text("Movements"),
+                    ),
+            ],
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<InventoryBloc>().add(const RefreshInventory());
-            },
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search stock...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 0,
+                      horizontal: 8,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                      _applyFilters();
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (!isMobile)
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () {
+                    context.read<InventoryBloc>().add(const RefreshInventory());
+                  },
+                ),
+            ],
           ),
         ],
       ),
