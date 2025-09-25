@@ -12,5 +12,6 @@ class RouteNames {
   static const String addProduct = 'addProduct';
   static const String inventoryAdd = 'inventory-add';
   static const String inventoryEdit = 'inventory-edit';
+  static const String stockMovements = 'stockMovements';
   static const String salesNew = 'sales-new';
 }

@@ -13,6 +13,7 @@ class RoutePaths {
   // Inventory item routes
   static const String inventoryItemDetail = '/inventory/items/:id';
   static const String inventoryItemMovements = '/inventory/items/:id/movements';
+  static const String stockMovements = '/inventory/stock-movements';
 
   // Other modules
   static const String sales = '/sales';

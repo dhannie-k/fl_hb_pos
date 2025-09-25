@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hb_pos_inv/data/datasources/supabase_datasource.dart';
 import 'package:hb_pos_inv/domain/repositories/product_service.dart';
+import 'package:hb_pos_inv/presentation/bloc/stock_movements/stock_movements_bloc.dart';
+import 'package:hb_pos_inv/presentation/bloc/stock_movements/stock_movements_event.dart';
 import 'package:hb_pos_inv/presentation/pages/product_detail_page.dart';
 import '../pages/main_layout.dart';
 import '../pages/dashboard_page.dart';
@@ -10,8 +13,10 @@ import '../pages/edit_product_page.dart';
 import '../pages/add_product_item_page.dart';
 import '../pages/inventory_item_detail_page.dart';
 import '../pages/inventory_item_movement_page.dart';
+import '../pages/stock_movements_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AppRouter {
   static final GoRouter _router = GoRouter(
@@ -42,7 +47,8 @@ class AppRouter {
             pageBuilder: (context, state) => NoTransitionPage(
               key: state.pageKey,
               child: AddProductPage(
-                preselectedCategoryId: state.uri.queryParameters['categoryId'] != null
+                preselectedCategoryId:
+                    state.uri.queryParameters['categoryId'] != null
                     ? int.tryParse(state.uri.queryParameters['categoryId']!)
                     : null,
               ),
@@ -87,6 +93,14 @@ class AppRouter {
               return InventoryItemMovementsPage(itemId: itemId);
             },
           ),
+          GoRoute(
+            path: RoutePaths.stockMovements,
+            name: 'stockMovements',
+            builder: (context, state) => BlocProvider(
+              create: (_) => StockMovementsBloc(SupabaseDatasource())..add(const LoadStockMovements()),
+              child: const StockMovementsPage(),
+            ),
+          ),
         ],
       ),
     ],
@@ -96,7 +110,7 @@ class AppRouter {
 
   static GoRouter get router => _router;
 
-  static String getPageTitle(BuildContext context) {
+  /* static String getPageTitle(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
 
     switch (location) {
@@ -109,6 +123,6 @@ class AppRouter {
       default:
         return 'Dashboard';
     }
-  }
-}
+  } */
 
+}

@@ -6,7 +6,7 @@ import '../../bloc/inventory/inventory_bloc.dart';
 import '../../bloc/inventory/inventory_state.dart';
 import '../../bloc/inventory/inventory_event.dart';
 import '../../pages/inventory_item_detail_page.dart';
-import '../../pages/stock_movements_page.dart';
+import '../../router/route_paths.dart';
 
 class StockTab extends StatefulWidget {
   const StockTab({super.key});
@@ -176,21 +176,15 @@ class _StockTabState extends State<StockTab> {
               isMobile
                   ? IconButton(
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const StockMovementsPage(),
-                          ),
+                        context.push(
+                          RoutePaths.stockMovements
                         );
                       },
                       icon: const Icon(Icons.history),
                     )
                   : TextButton.icon(
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const StockMovementsPage(),
-                          ),
-                        );
+                        context.push(RoutePaths.stockMovements);
                       },
                       icon: const Icon(Icons.history),
                       label: const Text("Movements"),

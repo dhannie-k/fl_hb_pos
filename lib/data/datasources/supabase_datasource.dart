@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/stock_movement.dart';
+
 class SupabaseDatasource {
   final SupabaseClient client = Supabase.instance.client;
 
@@ -161,4 +163,26 @@ class SupabaseDatasource {
       throw Exception('Failed to fetch due payments summary: $e');
     }
   }
+
+  Future<List<StockMovement>> getStockMovements({
+  DateTime? startDate,
+  DateTime? endDate,
+  String? direction,
+  String? type,
+}) async {
+  final data = await client.rpc(
+    'get_stock_movements',
+    params: {
+      'p_start_date': startDate?.toIso8601String(),
+      'p_end_date': endDate?.toIso8601String(),
+      'p_direction': direction,
+      'p_type': type,
+    },
+  );
+
+  // data is already a List<dynamic>
+  final list = data as List<dynamic>;
+  return list.map((e) => StockMovement.fromJson(e as Map<String, dynamic>)).toList();
+}
+
 }
