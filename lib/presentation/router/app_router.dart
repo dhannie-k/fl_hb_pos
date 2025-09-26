@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hb_pos_inv/data/datasources/supabase_datasource.dart';
 import 'package:hb_pos_inv/domain/repositories/product_service.dart';
-import 'package:hb_pos_inv/presentation/bloc/stock_movements/stock_movements_bloc.dart';
-import 'package:hb_pos_inv/presentation/bloc/stock_movements/stock_movements_event.dart';
 import 'package:hb_pos_inv/presentation/pages/product_detail_page.dart';
 import '../pages/main_layout.dart';
 import '../pages/dashboard_page.dart';
@@ -16,7 +13,6 @@ import '../pages/inventory_item_movement_page.dart';
 import '../pages/stock_movements_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AppRouter {
   static final GoRouter _router = GoRouter(
@@ -95,11 +91,8 @@ class AppRouter {
           ),
           GoRoute(
             path: RoutePaths.stockMovements,
-            name: 'stockMovements',
-            builder: (context, state) => BlocProvider(
-              create: (_) => StockMovementsBloc(SupabaseDatasource())..add(const LoadStockMovements()),
-              child: const StockMovementsPage(),
-            ),
+            name: RouteNames.stockMovements,
+            builder: (context, state) => const StockMovementsPage(),
           ),
         ],
       ),
@@ -124,5 +117,4 @@ class AppRouter {
         return 'Dashboard';
     }
   } */
-
 }

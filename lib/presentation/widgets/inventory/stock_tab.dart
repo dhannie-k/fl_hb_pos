@@ -176,9 +176,7 @@ class _StockTabState extends State<StockTab> {
               isMobile
                   ? IconButton(
                       onPressed: () {
-                        context.push(
-                          RoutePaths.stockMovements
-                        );
+                        context.push(RoutePaths.stockMovements);
                       },
                       icon: const Icon(Icons.history),
                     )
@@ -347,7 +345,14 @@ class _StockTabState extends State<StockTab> {
                   _showAdjustStockDialog(item);
                   break;
                 case 'movements':
-                  context.push('/inventory/items/${item.itemId}/movements');
+                  //context.push('/inventory/items/${item.itemId}/movements');
+                  context.push(
+                    RoutePaths.inventoryItemMovements.replaceFirst(
+                      ':id',
+                      item.itemId.toString(),
+                    ),
+                  );
+
                   break;
               }
             },

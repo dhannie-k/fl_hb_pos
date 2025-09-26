@@ -185,4 +185,15 @@ class SupabaseDatasource {
   return list.map((e) => StockMovement.fromJson(e as Map<String, dynamic>)).toList();
 }
 
+Future<double> getCurrentStock(int itemId) async {
+  final response = await client
+      .from('inventory')
+      .select('stock')
+      .eq('product_item_id', itemId)
+      .maybeSingle();
+
+  if (response == null) throw Exception("Item not found");
+  return (response['stock'] as num).toDouble();
+}
+
 }

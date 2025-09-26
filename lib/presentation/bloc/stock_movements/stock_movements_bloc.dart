@@ -27,6 +27,8 @@ class StockMovementsBloc extends Bloc<StockMovementsEvent, StockMovementsState> 
         movements: movements,
         direction: event.direction,
         type: event.type,
+        startDate: event.startDate,
+        endDate: event.endDate,
       ));
     } catch (e) {
       emit(StockMovementsError(e.toString()));
@@ -40,10 +42,10 @@ class StockMovementsBloc extends Bloc<StockMovementsEvent, StockMovementsState> 
     if (state is StockMovementsLoaded) {
       final current = state as StockMovementsLoaded;
       add(LoadStockMovements(
-        startDate: null,
-        endDate: null,
         direction: current.direction,
         type: current.type,
+        startDate: current.startDate,
+        endDate: current.endDate,
       ));
     } else {
       add(const LoadStockMovements());

@@ -28,7 +28,7 @@ class StockMovement {
   factory StockMovement.fromJson(Map<String, dynamic> json) {
     return StockMovement(
       id: json['id'] as int,
-      timestamp: DateTime.parse(json['movement_timestamp']),
+      timestamp: DateTime.parse(json['movement_timestamp']).toLocal(),
       transactionType: json['transaction_type'] as String,
       direction: json['direction'] as String, // new
       productName: json['product_name'] as String,

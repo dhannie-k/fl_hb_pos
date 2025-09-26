@@ -264,7 +264,7 @@ class DashboardPage extends StatelessWidget {
       children: [
         DashboardCard(
           title: 'Sales This Month',
-          value: '\$${NumberFormat('#,##0.00').format(stats.totalSales)}',
+          value: 'Rp${NumberFormat('#,##0.00').format(stats.totalSales)}',
           icon: Icons.trending_up,
           color: AppColors.success,
         ),
@@ -398,7 +398,7 @@ Widget _buildAdditionalCards(DashboardStats stats, {bool isMobile = false}) {
                   if (stats.duePaymentsAmount > 0) ...[
                     SizedBox(height: 8),
                     Text(
-                      '\$${NumberFormat('#,##0.00').format(stats.duePaymentsAmount)}',
+                      'Rp${NumberFormat('#,##0.00').format(stats.duePaymentsAmount)}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,

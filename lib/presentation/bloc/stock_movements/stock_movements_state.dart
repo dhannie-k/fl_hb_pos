@@ -16,15 +16,19 @@ class StockMovementsLoaded extends StockMovementsState {
   final List<StockMovement> movements;
   final String? direction;
   final String? type;
+  final DateTime? startDate;
+  final DateTime? endDate;
 
   const StockMovementsLoaded({
     required this.movements,
     this.direction,
     this.type,
+    this.startDate,
+    this.endDate,
   });
 
   @override
-  List<Object?> get props => [movements, direction, type];
+  List<Object?> get props => [movements, direction, type, startDate, endDate];
 }
 
 class StockMovementsError extends StockMovementsState {
