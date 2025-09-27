@@ -169,6 +169,7 @@ class SupabaseDatasource {
   DateTime? endDate,
   String? direction,
   String? type,
+  int? itemId
 }) async {
   final data = await client.rpc(
     'get_stock_movements',
@@ -177,6 +178,7 @@ class SupabaseDatasource {
       'p_end_date': endDate?.toIso8601String(),
       'p_direction': direction,
       'p_type': type,
+      'p_item_id' : itemId
     },
   );
 

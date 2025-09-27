@@ -1,8 +1,9 @@
 class StockMovement {
   final int id;
   final DateTime timestamp;
-  final String transactionType; // purchase, sale, etc
-  final String direction;       // in / out
+  final String transactionType;
+  final String direction;
+  final int productItemId; // <- new
   final String productName;
   final String? brand;
   final String? specification;
@@ -16,6 +17,7 @@ class StockMovement {
     required this.timestamp,
     required this.transactionType,
     required this.direction,
+    required this.productItemId,
     required this.productName,
     this.brand,
     this.specification,
@@ -28,9 +30,10 @@ class StockMovement {
   factory StockMovement.fromJson(Map<String, dynamic> json) {
     return StockMovement(
       id: json['id'] as int,
-      timestamp: DateTime.parse(json['movement_timestamp']).toLocal(),
+      timestamp: DateTime.parse(json['movement_timestamp']),
       transactionType: json['transaction_type'] as String,
-      direction: json['direction'] as String, // new
+      direction: json['direction'] as String,
+      productItemId: json['product_item_id'] as int,
       productName: json['product_name'] as String,
       brand: json['brand'] as String?,
       specification: json['specification'] as String?,
