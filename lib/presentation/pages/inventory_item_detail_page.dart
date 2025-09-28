@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/inventory/inventory_state.dart';
 import '../bloc/inventory/inventory_event.dart';
 
-
 class InventoryItemDetailPage extends StatelessWidget {
   final int itemId;
   const InventoryItemDetailPage({super.key, required this.itemId});
@@ -33,7 +32,7 @@ class InventoryItemDetailPage extends StatelessWidget {
                     Text('Stock: ${item.stock}'),
                     const Divider(),
                     ElevatedButton.icon(
-                      onPressed: () => context.push('/inventory/items/${item.itemId}/movements'),
+                      onPressed: () => context.push('/inventory/items/${item.itemId}/movements', extra: item),
                       icon: const Icon(Icons.history),
                       label: const Text("View Movements"),
                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hb_pos_inv/domain/entities/inventory.dart';
 import 'package:hb_pos_inv/domain/repositories/product_service.dart';
 import 'package:hb_pos_inv/presentation/pages/product_detail_page.dart';
 import '../pages/main_layout.dart';
@@ -86,7 +87,8 @@ class AppRouter {
             name: 'inventoryItemMovements',
             builder: (context, state) {
               final itemId = int.parse(state.pathParameters['id']!);
-              return InventoryItemMovementsPage(itemId: itemId);
+               final item = state.extra as InventoryItem;
+              return InventoryItemMovementsPage(itemId: itemId, productName: item.productName, itemSpec: item.specification,);
             },
           ),
           GoRoute(

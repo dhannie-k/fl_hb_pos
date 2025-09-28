@@ -345,13 +345,13 @@ class _StockTabState extends State<StockTab> {
                   _showAdjustStockDialog(item);
                   break;
                 case 'movements':
-                  //context.push('/inventory/items/${item.itemId}/movements');
-                  context.push(
+                  context.push('/inventory/items/${item.itemId}/movements', extra: item);
+                  /* context.push(
                     RoutePaths.inventoryItemMovements.replaceFirst(
                       ':id',
                       item.itemId.toString(),
                     ),
-                  );
+                  ); */
 
                   break;
               }
