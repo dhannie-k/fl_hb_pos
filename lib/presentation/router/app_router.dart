@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hb_pos_inv/domain/entities/inventory.dart';
+import 'package:hb_pos_inv/domain/entities/product.dart';
 import 'package:hb_pos_inv/domain/repositories/product_service.dart';
+import 'package:hb_pos_inv/presentation/pages/edit_product_item_page.dart';
 import 'package:hb_pos_inv/presentation/pages/product_detail_page.dart';
 import '../pages/main_layout.dart';
 import '../pages/dashboard_page.dart';
@@ -87,14 +89,27 @@ class AppRouter {
             name: 'inventoryItemMovements',
             builder: (context, state) {
               final itemId = int.parse(state.pathParameters['id']!);
-               final item = state.extra as InventoryItem;
-              return InventoryItemMovementsPage(itemId: itemId, productName: item.productName, itemSpec: item.specification,);
+              final item = state.extra as InventoryItem;
+              return InventoryItemMovementsPage(
+                itemId: itemId,
+                productName: item.productName,
+                itemSpec: item.specification,
+              );
             },
           ),
           GoRoute(
             path: RoutePaths.stockMovements,
             name: RouteNames.stockMovements,
             builder: (context, state) => const StockMovementsPage(),
+          ),
+          GoRoute(
+            path: RoutePaths.productEditItem,
+            name: 'productEditItem',
+            builder: (context, state) {
+              final item =
+                  state.extra as ProductItem; // pass item via context.push
+              return EditProductItemPage(item: item);
+            },
           ),
         ],
       ),

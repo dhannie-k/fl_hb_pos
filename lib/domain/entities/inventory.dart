@@ -84,4 +84,44 @@ class InventoryItem extends Equatable {
         stock,
         updatedAt,
       ];
+
+  InventoryItem copyWith({
+    int? productId,
+    String? productName,
+    String? brand,
+    String? description,
+    String? imageUrl,
+    int? categoryId,
+    String? categoryName,
+    int? itemId,
+    String? specification,
+    String? sku,
+    String? barcode,
+    String? unitOfMeasure,
+    String? color,
+    double? unitPrice,
+    int? minimumStock,
+    double? stock,
+    DateTime? updatedAt,
+  }) {
+    return InventoryItem(
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      brand: brand ?? this.brand,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      itemId: itemId ?? this.itemId,
+      specification: specification ?? this.specification,
+      sku: sku ?? this.sku,
+      barcode: barcode ?? this.barcode,
+      unitOfMeasure: unitOfMeasure ?? this.unitOfMeasure,
+      color: color ?? this.color,
+      unitPrice: unitPrice ?? this.unitPrice,
+      minimumStock: minimumStock ?? this.minimumStock,
+      stock: stock ?? this.stock,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

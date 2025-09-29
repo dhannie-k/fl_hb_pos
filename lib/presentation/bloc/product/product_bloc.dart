@@ -61,42 +61,51 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     try {
       emit(const ProductLoading());
       await _productService.createProduct(event.product);
-      emit(const ProductOperationSuccess('Product added successfully'));
-      add(const LoadProducts()); // Reload products
+      //emit single-shot state
+      emit(const ProductAddedSuccessfully('Product added successfully')); 
+      add(const LoadProducts());
+       // Reload products
     } catch (e) {
       emit(ProductError(e.toString()));
     }
   }
 
   Future<void> _onAddProductItem(
-  AddProductItem event,
-  Emitter<ProductState> emit,
-) async {
-  try {
-    await _productService.createProductItemWithInitialQuantity(
-      event.productItem,
-      event.initialQuantity,
-    );
+    AddProductItem event,
+    Emitter<ProductState> emit,
+  ) async {
+    try {
+      await _productService.createProductItemWithInitialQuantity(
+        event.productItem,
+        event.initialQuantity,
+      );
 
-    emit(ProductOperationSuccess('Product item added successfully', stayOnPage: event.stayOnPage,));
+      emit(
+        ProductOperationSuccess(
+          'Product item added successfully',
+          stayOnPage: event.stayOnPage,
+        ),
+      );
 
-    // Trigger product reload — let _onLoadProducts handle the ProductLoaded state
-    add(const LoadProducts());
-  } catch (e) {
-    final errorMsg = e.toString();
-    if (errorMsg.contains('unique_product_spec')) {
-      emit(const ProductOperationError(
-        'This specification already exists for this product',
-      ));
-    } else {
-      emit(ProductOperationError('Failed to add product item: $errorMsg'));
+      // Trigger product reload — let _onLoadProducts handle the ProductLoaded state
+      add(const LoadProducts());
+    } catch (e) {
+      final errorMsg = e.toString();
+      if (errorMsg.contains('unique_product_spec')) {
+        emit(
+          const ProductOperationError(
+            'This specification already exists for this product',
+          ),
+        );
+      } else {
+        emit(ProductOperationError('Failed to add product item: $errorMsg'));
+      }
+
+      // optional: reload products on error
+      final products = await _productService.getProductDisplayItems();
+      emit(ProductLoaded(products: products));
     }
-
-    // optional: reload products on error
-    final products = await _productService.getProductDisplayItems();
-    emit(ProductLoaded(products: products));
   }
-}
 
   Future<void> _onUpdateProduct(
     UpdateProduct event,
@@ -111,18 +120,21 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     }
   }
 
-  Future<void> _onUpdateProductItem(
-    UpdateProductItem event,
-    Emitter<ProductState> emit,
-  ) async {
-    try {
-      await _productService.updateProductItem(event.productItem);
-      emit(const ProductOperationSuccess('Product item updated successfully'));
-      add(const LoadProducts()); // Reload products
-    } catch (e) {
-      emit(ProductError(e.toString()));
-    }
+ Future<void> _onUpdateProductItem(
+  UpdateProductItem event,
+  Emitter<ProductState> emit,
+) async {
+  try {
+    // We need the full updated item back to get the productId
+    await _productService.updateProductItem(event.productItem);
+    emit(const ProductOperationSuccess('Product item updated successfully'));
+    
+    // GOOD: Reload the details for the specific product
+    add(LoadProductDisplayDetail(event.productItem.productId)); 
+  } catch (e) {
+    emit(ProductError(e.toString()));
   }
+}
 
   Future<void> _onDeleteProduct(
     DeleteProduct event,

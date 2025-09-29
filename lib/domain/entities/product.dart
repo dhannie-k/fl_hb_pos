@@ -144,6 +144,7 @@ class ProductItem extends Equatable {
   final int? minimumStock;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  //final String? productName; 
 
   const ProductItem({
     required this.id,
@@ -158,6 +159,7 @@ class ProductItem extends Equatable {
     this.minimumStock,
     this.createdAt,
     this.updatedAt,
+    //this.productName,
   });
 
   factory ProductItem.createNew({

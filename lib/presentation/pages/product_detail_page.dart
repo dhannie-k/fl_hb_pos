@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hb_pos_inv/domain/entities/inventory.dart';
+import 'package:hb_pos_inv/presentation/router/route_paths.dart';
 import '../bloc/product/product_bloc.dart';
 import '../bloc/product/product_state.dart';
 import '../bloc/product/product_event.dart';
 import '../widgets/common/loading_widget.dart';
-
 
 class ProductDetailPage extends StatefulWidget {
   final int productId;
@@ -25,9 +27,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Product Details'),
-      ),
+      appBar: AppBar(title: const Text('Product Details')),
       body: BlocBuilder<ProductBloc, ProductState>(
         builder: (context, state) {
           if (state is ProductLoading) {
@@ -78,15 +78,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(product.name,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge),
+                                Text(
+                                  product.name,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
                                 if (product.brand != null)
-                                  Text(product.brand!,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium),
+                                  Text(
+                                    product.brand!,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
                                 if (product.description != null)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
@@ -116,12 +118,79 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     itemBuilder: (context, index) {
                       final item = items[index];
                       return ListTile(
-                        title: Text('${item.specification} ${item.color ?? ''}'),
+                        title: Text(
+                          '${item.specification} ${item.color ?? ''}',
+                        ),
                         subtitle: Text('Unit: ${item.unitOfMeasure}'),
-                        trailing: Text(
-                          item.unitPrice != null
-                              ? '\$${item.unitPrice!.toStringAsFixed(2)}'
-                              : '-',
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              item.unitPrice != null
+                                  ? 'Rp${item.unitPrice!.toStringAsFixed(2)}'
+                                  : '-',
+                            ),
+                            PopupMenuButton<String>(
+                              onSelected: (value) {
+                                switch (value) {
+                                  case 'edit':
+                                    context.push(
+                                      RoutePaths.productEditItem,
+                                      extra: item,
+                                    );                                    
+                                    break;
+                                  case 'movements':
+                                    context.push(
+                                      '/inventory/items/${item.id}/movements',
+                                      extra: InventoryItem(
+                                        productId: item.productId,
+                                        productName: product.name,
+                                        itemId: item.id!,
+                                        specification: item.specification,
+                                        unitOfMeasure: item.unitOfMeasure,
+                                        stock: 0.0,
+                                      ),
+                                    );
+                                    break;
+                                  case 'adjust':
+                                    // maybe reuse your stock adjust dialog
+                                    break;
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('Edit Item'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'movements',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.history, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('View Movements'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'adjust',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.tune, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('Quick Adjustment'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       );
                     },

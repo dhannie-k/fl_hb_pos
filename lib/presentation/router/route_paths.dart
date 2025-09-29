@@ -8,6 +8,7 @@ class RoutePaths {
   static const String productAdd = '/inventory/products/add';
   static const String productEdit = '/inventory/products/edit/:id';
   static const String productAddItem = '/inventory/products/:id/add-item';
+  static const String productEditItem = '/products/items/edit';
   static const String productView = '/inventory/products/view/:id';
 
   // Inventory item routes

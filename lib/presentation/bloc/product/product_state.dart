@@ -61,3 +61,11 @@ class ProductDisplayDetailLoaded extends ProductState {
   @override
   List<Object?> get props => [product];
 }
+// This state is for a specific, one-time event
+class ProductAddedSuccessfully extends ProductState {
+  final String message;
+  const ProductAddedSuccessfully(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
