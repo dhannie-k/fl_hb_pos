@@ -41,9 +41,3 @@ class LoadInventoryItem extends InventoryEvent {
 }
 
 
-
-
-// TODO() implement inventory event later if stock movement is implemented
-class UpdateStock extends InventoryEvent { }
-class DeleteStockItem extends InventoryEvent { }
-

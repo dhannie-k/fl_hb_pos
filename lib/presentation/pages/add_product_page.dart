@@ -76,7 +76,7 @@ class _AddProductPageState extends State<AddProductPage> {
             setState(() => _isLoading = false);
           }
 
-          if (state is ProductOperationSuccess) {
+          if (state is ProductAddedSuccessfully) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
@@ -115,7 +115,7 @@ class _AddProductPageState extends State<AddProductPage> {
                       return 'Product name is required';
                     }
                     return null;
-                  },
+                  }, 
                 ),
                 const SizedBox(height: 16),
                 

@@ -1,5 +1,14 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:developer' as developer;
+
+class AuthFailure implements Exception {
+  final String message;
+  AuthFailure(this.message);
+
+  @override
+  String toString() => 'AuthFailure: $message';
+}
 
 class AuthRepository {
   final SupabaseClient _supabaseClient;
@@ -69,20 +78,25 @@ class AuthRepository {
       );
 
       if (response.user == null) {
-        throw 'Sign in failed with Supabase.';
+        throw AuthFailure('Sign in failed with Supabase');
       }
-    } on AuthException catch (e) {
-      print('Supabase Auth Error: ${e.message}');
-      throw 'Authentication failed. Please try again.';
-    } catch (e) {
+    } on AuthException catch (e, st) {
+      developer.log('Supabase Auth Error: ${e.message}, stack trace: $st');
+      throw AuthFailure('Authentication failed. Please try again.');
+    } catch (e, st) {
       // This block will now catch cancellations from googleUser.authenticate()
-      print('Generic Sign-In Error: $e');
-      throw 'An unexpected error occurred during sign-in.';
+      developer.log('Generic Sign-In Error: $e, stack trace: $st');
+      throw AuthFailure("An unexpected error occured during sign-in");
     }
   }
 
   Future<void> signInWithOAuth() async {
+    try{
     await _supabaseClient.auth.signInWithOAuth(OAuthProvider.google);
+    }catch(e, st){
+      developer.log('OAuth sign-in erro: $e, stack-trace: $st');
+      throw AuthFailure('An error occured during during OAuth sign-in');
+    }
   }
 
   /// Signs out from both Supabase and Google.
@@ -91,8 +105,8 @@ class AuthRepository {
       await _googleSignIn.signOut();
       await _supabaseClient.auth.signOut();
     } catch (e) {
-      print('Sign Out Error: $e');
-      throw 'An error occurred during sign-out.';
+      developer.log('Sign Out Error: $e');
+      throw AuthFailure('An error occured during sign-out');
     }
   }
 }
