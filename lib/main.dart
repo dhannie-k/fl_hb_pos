@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hb_pos_inv/data/repositories/purchase_repository_impl.dart';
+import 'package:hb_pos_inv/domain/repositories/purchase_repository.dart';
+import 'package:hb_pos_inv/presentation/bloc/purchase/purchase_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/supabase_config.dart';
 import 'core/constans/app_colors.dart';
@@ -26,7 +29,7 @@ import 'presentation/bloc/inventory/inventory_bloc.dart';
 import 'presentation/bloc/inventory/inventory_event.dart';
 import 'data/repositories/inventory_repository_impl.dart';
 
-// Auth 
+// Auth
 import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/auth/auth_event.dart';
 import 'presentation/bloc/auth/auth_state.dart';
@@ -42,10 +45,9 @@ void main() async {
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
 
-  runApp(
-    App()
-  );
+  runApp(App());
 }
+
 // A global accessor is fine for Supabase client
 final supabase = Supabase.instance.client;
 
@@ -58,9 +60,9 @@ class App extends StatelessWidget {
     return RepositoryProvider(
       create: (context) => AuthRepository(supabaseClient: supabase),
       child: BlocProvider(
-        create: (context) => AuthBloc(
-          authRepository: context.read<AuthRepository>(),
-        )..add(AuthAppStarted()), // Check auth status on start
+        create: (context) =>
+            AuthBloc(authRepository: context.read<AuthRepository>())
+              ..add(AuthAppStarted()), // Check auth status on start
         child: const RootApp(),
       ),
     );
@@ -91,7 +93,6 @@ class RootApp extends StatelessWidget {
   }
 }
 
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -99,106 +100,117 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Create datasource instance
     final supabaseDatasource = SupabaseDatasource();
+    //final SupabaseClient client = Supabase.instance.client;
     final productRepository = ProductRepositoryImpl(supabaseDatasource);
     final inventoryRepository = InventoryRepositoryImpl(supabaseDatasource);
     final productService = ProductService(productRepository);
 
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        // Dashboard BLoC
-        BlocProvider(
-          create: (context) => DashboardBloc(
-            DashboardService(DashboardRepositoryImpl(supabaseDatasource)),
-          )..add(LoadDashboard()),
+        // You can provide simpler repositories directly
+        RepositoryProvider<PurchaseRepository>(
+          create: (context) => PurchaseRepositoryImpl(supabase),
         ),
-
-        // Category BLoC
-        BlocProvider(
-          create: (context) =>
-              CategoryBloc(CategoryRepositoryImpl(supabaseDatasource)),
-        ),
-        BlocProvider(
-          create: (context) => ProductBloc(productService: productService),
-        ),
-        // InventoryBloc
-        BlocProvider(
-          create: (context) =>
-              InventoryBloc(inventoryRepository)
-                ..add(LoadInventory()), // dispatch on creation
-        ),
-
-        // TODO: Add more BLoCs here as we build them
-        // ProductBloc, InventoryBloc, SalesBloc, etc.
+        // Keep providing others as needed
       ],
-      child: MaterialApp.router(
-        title: 'Hidup Baru POS',
-        debugShowCheckedModeBanner: false,
-        routerConfig: AppRouter.router,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.primary,
-            brightness: Brightness.light,
+      // MultiBlocProvider consumes the repositories provided above
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => DashboardBloc(
+              DashboardService(DashboardRepositoryImpl(supabaseDatasource)),
+            )..add(LoadDashboard()),
           ),
-          scaffoldBackgroundColor: AppColors.background,
-          cardTheme: CardThemeData(
-            elevation: 2,
-            shadowColor: AppColors.cardShadow,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+          BlocProvider(
+            create: (context) =>
+                CategoryBloc(CategoryRepositoryImpl(supabaseDatasource)),
+          ),
+          BlocProvider(
+            create: (context) => ProductBloc(productService: productService),
+          ),
+          BlocProvider(
+            create: (context) =>
+                InventoryBloc(inventoryRepository)..add(const LoadInventory()),
+          ),
+          // Add the PurchaseBloc here, it can now find PurchaseRepository
+          BlocProvider(
+            create: (context) =>
+                PurchaseBloc(context.read<PurchaseRepository>()),
+          ),
+        ],
+        child: MaterialApp.router(
+          title: 'Hidup Baru POS',
+          debugShowCheckedModeBanner: false,
+          routerConfig: AppRouter.router,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppColors.primary,
+              brightness: Brightness.light,
             ),
-          ),
-          appBarTheme: AppBarTheme(
-            backgroundColor: AppColors.surface,
-            foregroundColor: AppColors.textPrimary,
-            elevation: 0,
-            centerTitle: false,
-            titleTextStyle: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
+            scaffoldBackgroundColor: AppColors.background,
+            cardTheme: CardThemeData(
+              elevation: 2,
+              shadowColor: AppColors.cardShadow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            appBarTheme: AppBarTheme(
+              backgroundColor: AppColors.surface,
+              foregroundColor: AppColors.textPrimary,
+              elevation: 0,
+              centerTitle: false,
+              titleTextStyle: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.accent, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.error),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.error, width: 2),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+            snackBarTheme: SnackBarThemeData(
+              behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-            ),
-          ),
-          dialogTheme: DialogThemeData(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.accent, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.error),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.error, width: 2),
-            ),
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-          snackBarTheme: SnackBarThemeData(
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
             ),
           ),
         ),

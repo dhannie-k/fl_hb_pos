@@ -40,4 +40,9 @@ class LoadInventoryItem extends InventoryEvent {
   List<Object?> get props => [itemId];
 }
 
+class SearchProductItems extends InventoryEvent {
+      final String query;
+      const SearchProductItems(this.query);
+    }
+
 

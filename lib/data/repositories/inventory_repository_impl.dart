@@ -43,4 +43,14 @@ class InventoryRepositoryImpl implements InventoryRepository {
       },
     );
   }
+
+  @override
+  Future<List<InventoryItem>> searchProductItems(String query) async {
+    final response = await datasource.client.rpc(
+      'search_product_items',
+      params: {'search_term': query},
+    );
+    final data = response as List<dynamic>;
+    return data.map((json) => InventoryItem.fromJson(json)).toList();
+  }
 }

@@ -27,8 +27,8 @@ class MobileBottomNavBar extends StatelessWidget {
           label: 'Sales',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.analytics),
-          label: 'Reports',
+          icon: Icon(Icons.shopping_bag),
+          label: 'Purchase',
         ),
       ],
     );
@@ -37,7 +37,7 @@ class MobileBottomNavBar extends StatelessWidget {
   int _getCurrentIndex(String location) {
     if (location.startsWith('/inventory')) return 1;
     if (location.startsWith('/sales')) return 2;
-    if (location.startsWith('/reports')) return 3;
+    if (location.startsWith('/purchase')) return 3;
     return 0; // dashboard
   }
 
@@ -53,7 +53,7 @@ class MobileBottomNavBar extends StatelessWidget {
         context.go(RoutePaths.sales);
         break;
       case 3:
-        context.go(RoutePaths.reports);
+        context.go(RoutePaths.purchaseAdd);
         break;
     }
   }

@@ -14,6 +14,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<SearchInventory>(_onSearchInventory);
     on<AdjustStock>(_onAdjustStock);
     on<LoadInventoryItem>(_onLoadInventoryItem);
+    on<SearchProductItems>(_onSearchProductItems);
   }
 
   Future<void> _onLoadInventory(
@@ -24,7 +25,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     try {
       final items = await repository.getInventory();
       _allItems = items;
-      emit(InventoryLoaded(items));
+      emit(InventoryLoaded(items, searchResults: []));
       //emit(const InventoryOperationSuccess('Inventory refreshed'));
     } catch (e) {
       emit(InventoryError('Failed to load inventory: $e'));
@@ -35,12 +36,18 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     RefreshInventory event,
     Emitter<InventoryState> emit,
   ) async {
+    // No loading state needed for a pull-to-refresh action
     try {
       final items = await repository.getInventory();
-      _allItems = items;
-      emit(InventoryLoaded(items, message: 'Inventory refreshed'));
+      emit(InventoryLoaded(items, searchResults: [], message: 'Inventory refreshed'));
     } catch (e) {
-      emit(InventoryError('Failed to refresh inventory: $e'));
+      // If refresh fails, show an error but keep the old data if available
+      if (state is InventoryLoaded) {
+        final currentState = state as InventoryLoaded;
+        emit(currentState.copyWith(message: 'Failed to refresh: $e'));
+      } else {
+        emit(InventoryError('Failed to refresh inventory: $e'));
+      }
     }
   }
 
@@ -70,14 +77,18 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       emit(InventoryLoading());
 
       await repository.adjustStock(event.itemId, event.quantity, event.direction,note: event.note);
-
-      // reload items after adjustment
-      final items = await repository.getInventory();
-      _allItems = items;
-
       emit(InventoryLoaded(_allItems, message: 'Stock adjusted successfully'));
+      // After adjustment, reload all inventory to ensure data consistency
+      add(const RefreshInventory());
+
+      /* // reload items after adjustment
+      final items = await repository.getInventory();
+      _allItems = items; */
+
     } catch (e) {
       emit(InventoryError('Failed to adjust stock: $e'));
+      // After an error, it's good practice to reload the original state
+      add(const LoadInventory());
     }
   }
 
@@ -97,4 +108,30 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       emit(InventoryError('Failed to load item: $e'));
     }
   }
+
+  Future<void> _onSearchProductItems(
+    SearchProductItems event,
+    Emitter<InventoryState> emit,
+  ) async {
+    // We only perform search when the state is already InventoryLoaded
+    if (state is InventoryLoaded) {
+      final currentState = state as InventoryLoaded;
+
+      // Emit a state to show a loading indicator in the dialog
+      // by setting searchResults to null
+      emit(currentState.copyWith(searchResults: null));
+      
+      try {
+        final results = await repository.searchProductItems(event.query);
+        // Emit the final state with the search results
+        emit(currentState.copyWith(searchResults: results));
+      } catch (e) {
+        // If search fails, emit an empty list and maybe log the error
+        emit(currentState.copyWith(searchResults: []));
+        // You could also add an error message to the state if you want to display it
+      }
+    }
+  }
+  
 }
+

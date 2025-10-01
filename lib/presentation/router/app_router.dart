@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hb_pos_inv/domain/entities/inventory.dart';
 import 'package:hb_pos_inv/domain/entities/product.dart';
 import 'package:hb_pos_inv/domain/repositories/product_service.dart';
+import 'package:hb_pos_inv/presentation/pages/add_purchase_page.dart';
 import 'package:hb_pos_inv/presentation/pages/edit_product_item_page.dart';
 import 'package:hb_pos_inv/presentation/pages/product_detail_page.dart';
 import '../pages/main_layout.dart';
@@ -111,6 +112,11 @@ class AppRouter {
               return EditProductItemPage(item: item);
             },
           ),
+          GoRoute(
+            path: RoutePaths.purchaseAdd,
+            name: RouteNames.addPurchase, // Optional: Give it a name
+            builder: (context, state) => const AddPurchasePage(),
+          ),
         ],
       ),
     ],
@@ -119,19 +125,4 @@ class AppRouter {
   );
 
   static GoRouter get router => _router;
-
-  /* static String getPageTitle(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
-
-    switch (location) {
-      case RoutePaths.dashboard:
-        return 'Dashboard';
-      case RoutePaths.inventory:
-        return 'Inventory';
-      case RoutePaths.productAdd:
-        return 'Add Product';
-      default:
-        return 'Dashboard';
-    }
-  } */
 }

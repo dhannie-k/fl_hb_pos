@@ -16,6 +16,10 @@ class RoutePaths {
   static const String inventoryItemMovements = '/inventory/items/:id/movements';
   static const String stockMovements = '/inventory/stock-movements';
 
+  // purchase
+  static const String purchases = '/purchases';
+  static const String purchaseAdd = '/purchases/add';
+
   // Other modules
   static const String sales = '/sales';
   static const String customers = '/customers';
