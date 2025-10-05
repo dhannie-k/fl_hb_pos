@@ -10,7 +10,9 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
     on<AddPurchase>(_onAddPurchase);
     on<LoadPurchases>(_onLoadPurchases);
     on<LoadPurchaseDetails>(_onLoadPurchaseDetails);
+    on<CancelPurchase>(_onCancelPurchase);
   }
+  
 
   void _onAddPurchase(AddPurchase event, Emitter<PurchaseState> emit) async {
     emit(PurchaseLoading());
@@ -27,7 +29,7 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
   void _onLoadPurchases(LoadPurchases event, Emitter<PurchaseState> emit) async {
     emit(PurchaseLoading());
     try {
-      final purchases = await _purchaseRepository.getAllPurchases();
+      final purchases = await _purchaseRepository.getPurchases();
       emit(PurchasesLoaded(purchases));
     } catch (e) {
       emit(PurchaseError(e.toString()));
@@ -47,4 +49,18 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
       emit(PurchaseError(e.toString()));
     }
   }
-}
+
+  void _onCancelPurchase(CancelPurchase event, Emitter<PurchaseState> emit) async {
+      try {
+        await _purchaseRepository.cancelPurchase(event.purchaseId);
+        emit(PurchaseCancelled());
+
+        // reload list after cancel
+        final purchases = await _purchaseRepository.getPurchases();
+        emit(PurchasesLoaded(purchases));        
+      } catch (e) {
+        emit(PurchaseError(e.toString()));
+      }
+    }
+  }
+

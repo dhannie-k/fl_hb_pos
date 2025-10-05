@@ -26,3 +26,8 @@ class LoadPurchaseDetails extends PurchaseEvent {
     @override
   List<Object> get props => [purchaseId];
 }
+
+class CancelPurchase extends PurchaseEvent {
+  final int purchaseId;
+  const CancelPurchase(this.purchaseId);
+}

@@ -18,6 +18,7 @@ class RoutePaths {
 
   // purchase
   static const String purchases = '/purchases';
+  static const String purchaseItemDetails = '/purchases/purchase-item-details';
   static const String purchaseAdd = '/purchases/add';
 
   // Other modules

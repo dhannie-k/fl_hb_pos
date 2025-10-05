@@ -61,13 +61,15 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
   }
 
   @override
-  Future<List<Purchase>> getAllPurchases() async {
-    final response = await _client
-        .from('purchase')
-        .select('*, supplier:suppliers(name), purchase_items(count)')
-        .order('purchase_date', ascending: false);
-
-    return response.map((e) => Purchase.fromMap(e)).toList();
+  Future<List<Purchase>> getPurchases() async {
+    try {
+      final response = await _client.rpc('get_purchases');
+      final data = response as List<dynamic>;
+      return data.map((json) => Purchase.fromMap(json)).toList();
+    } catch (e) {
+      print('Error during purchase mapping: $e');
+      throw Exception('Failed to fetch purchases: $e');
+    }
   }
 
   @override

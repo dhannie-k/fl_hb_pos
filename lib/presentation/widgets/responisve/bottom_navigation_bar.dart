@@ -53,7 +53,7 @@ class MobileBottomNavBar extends StatelessWidget {
         context.go(RoutePaths.sales);
         break;
       case 3:
-        context.go(RoutePaths.purchaseAdd);
+        context.go(RoutePaths.purchases);
         break;
     }
   }

@@ -11,6 +11,8 @@ class RouteNames {
   // Sub-routes
   static const String addProduct = 'addProduct';
   static const String addPurchase= 'addPurchase';
+  static const String purchases= 'purchases';
+  static const String purchaseItemDetails= 'purchase-item-details';
   static const String inventoryAdd = 'inventory-add';
   static const String inventoryEdit = 'inventory-edit';
   static const String stockMovements = 'stockMovements';

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hb_pos_inv/domain/entities/inventory.dart';
 import 'package:hb_pos_inv/domain/entities/product.dart';
+import 'package:hb_pos_inv/domain/entities/purchase.dart';
 import 'package:hb_pos_inv/domain/repositories/product_service.dart';
 import 'package:hb_pos_inv/presentation/pages/add_purchase_page.dart';
 import 'package:hb_pos_inv/presentation/pages/edit_product_item_page.dart';
 import 'package:hb_pos_inv/presentation/pages/product_detail_page.dart';
+import 'package:hb_pos_inv/presentation/pages/purchase_item_details_page.dart';
+import 'package:hb_pos_inv/presentation/pages/purchases_page.dart';
 import '../pages/main_layout.dart';
 import '../pages/dashboard_page.dart';
 import '../pages/inventory_page.dart';
@@ -111,6 +114,22 @@ class AppRouter {
                   state.extra as ProductItem; // pass item via context.push
               return EditProductItemPage(item: item);
             },
+          ),
+          GoRoute(
+            path: RoutePaths.purchases,
+            name: RouteNames.purchases,
+            pageBuilder: (context, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const PurchasesPage(),
+            ),
+          ),
+          GoRoute(
+            path: RoutePaths.purchaseItemDetails,
+            name: RouteNames.purchaseItemDetails, // Optional: Give it a name
+            builder: (context, state) {
+            final purchase = state.extra as Purchase;
+            return PurchaseItemDetailsPage(purchase: purchase,);
+            }
           ),
           GoRoute(
             path: RoutePaths.purchaseAdd,

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:hb_pos_inv/domain/entities/inventory.dart';
 import 'package:hb_pos_inv/presentation/bloc/inventory/inventory_bloc.dart';
 import 'package:hb_pos_inv/presentation/bloc/inventory/inventory_event.dart';
@@ -9,8 +11,6 @@ import '../../domain/entities/purchase.dart';
 import '../bloc/purchase/purchase_bloc.dart';
 import '../bloc/purchase/purchase_event.dart';
 import '../bloc/purchase/purchase_state.dart';
-import 'dart:async';
-
 
 // Helper class to delay search requests while user is typing
 class _Debouncer {
@@ -29,7 +29,6 @@ class _Debouncer {
   }
 }
 
-
 class AddPurchasePage extends StatefulWidget {
   const AddPurchasePage({super.key});
 
@@ -41,7 +40,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   final _formKey = GlobalKey<FormState>();
   final _poNumberController = TextEditingController();
   final _supplierIdController = TextEditingController();
-  DateTime _purchaseDate = DateTime.now();
+  DateTime _purchaseDate = DateTime.now(); // State for the selected date
   PaymentMethod _paymentMethod = PaymentMethod.cash;
   final List<PurchaseItem> _items = [];
   bool _isLoading = false;
@@ -53,11 +52,26 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     super.dispose();
   }
 
+  // Function to show the date picker dialog
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _purchaseDate,
+      firstDate: DateTime(2020), // Set a reasonable earliest date
+      lastDate: DateTime.now(),   // Prevent selecting future dates
+    );
+    if (picked != null && picked != _purchaseDate) {
+      setState(() {
+        _purchaseDate = picked;
+      });
+    }
+  }
+
   void _submitPurchase() {
     if (!_formKey.currentState!.validate()) return;
     
     if (_items.isEmpty) {
-       ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please add at least one item to the purchase.'),
           backgroundColor: Colors.orange,
@@ -74,7 +88,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           ? null
           : _poNumberController.text.trim(),
       supplierId: int.tryParse(_supplierIdController.text.trim()),
-      purchaseDate: _purchaseDate,
+      purchaseDate: _purchaseDate, // Use the selected date
       totalAmount: totalAmount,
       paymentMethod: _paymentMethod,
       items: _items,
@@ -86,7 +100,6 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   void _showAddItemDialog() async {
     final selectedItem = await showDialog<InventoryItem>(
       context: context,
-      // Use the existing InventoryBloc instance
       builder: (_) => BlocProvider.value(
         value: context.read<InventoryBloc>(),
         child: const _ProductSearchDialog(),
@@ -148,7 +161,10 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
               if (formKey.currentState!.validate()) {
                 final newItem = PurchaseItem(
                   productItemId: item.itemId,
-                  productName: '${item.productName} (${item.specification})',
+                  product: item.productName,
+                  //brand: item.brand,
+                  specification: item.specification,
+                  //productName: '${item.productName} (${item.specification})',
                   quantityOrdered: double.parse(quantityController.text),
                   unitCost: double.parse(unitCostController.text),
                 );
@@ -172,13 +188,17 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
           setState(() => _isLoading = state is PurchaseLoading);
 
           if (state is PurchaseOperationSuccess) {
+            // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
                 backgroundColor: Colors.green,
               ),
             );
-            context.pop();
+            // Navigate back to the previous page
+            if (context.mounted) {
+              context.pop();
+            }
           } else if (state is PurchaseError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -195,6 +215,20 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // === DATE PICKER WIDGET ===
+                TextFormField(
+                  readOnly: true,
+                  controller: TextEditingController(
+                    text: DateFormat.yMMMd().format(_purchaseDate),
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Purchase Date*',
+                    suffixIcon: Icon(Icons.calendar_today),
+                     border: OutlineInputBorder(),
+                  ),
+                  onTap: () => _selectDate(context),
+                ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _poNumberController,
                   decoration: const InputDecoration(
@@ -259,7 +293,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 4),
                             child: ListTile(
-                              title: Text(item.productName ?? 'Item ID: ${item.productItemId}'),
+                              title: Text(item.product),
                               subtitle: Text(
                                   '${item.quantityOrdered} x @ ${item.unitCost.toStringAsFixed(2)} = ${(item.quantityOrdered * item.unitCost).toStringAsFixed(2)}'),
                               trailing: IconButton(
@@ -302,7 +336,6 @@ class _ProductSearchDialog extends StatefulWidget {
 }
 
 class __ProductSearchDialogState extends State<_ProductSearchDialog> {
-  // Delays the search API call until the user stops typing
   final _debouncer = _Debouncer(milliseconds: 500);
   String _currentQuery = '';
 
@@ -328,10 +361,8 @@ class __ProductSearchDialogState extends State<_ProductSearchDialog> {
                 prefixIcon: Icon(Icons.search),
               ),
               onChanged: (query) {
-                // Only trigger search if the query text has actually changed
                 if(query.trim() != _currentQuery) {
                    _currentQuery = query.trim();
-                   // Use the debouncer to avoid sending too many requests
                    _debouncer.run(() {
                     if (_currentQuery.isNotEmpty) {
                       context.read<InventoryBloc>().add(SearchProductItems(_currentQuery));
@@ -349,7 +380,6 @@ class __ProductSearchDialogState extends State<_ProductSearchDialog> {
                     if (_currentQuery.isEmpty) {
                       return const Center(child: Text('Please enter a search term.'));
                     }
-                    // When searchResults is null, it means a search is in progress
                     if (searchResults == null) {
                       return const Center(child: CircularProgressIndicator());
                     }
@@ -364,13 +394,11 @@ class __ProductSearchDialogState extends State<_ProductSearchDialog> {
                         return ListTile(
                           title: Text(item.productName),
                           subtitle: Text(item.specification),
-                          // Return the selected item when tapped
                           onTap: () => Navigator.of(context).pop(item),
                         );
                       },
                     );
                   }
-                  // Initial state before any search
                   return const Center(child: Text('Start typing to search for items.'));
                 },
               ),
@@ -379,9 +407,9 @@ class __ProductSearchDialogState extends State<_ProductSearchDialog> {
         ),
       ),
       actions: [
-        // This button now correctly uses the Navigator to pop the dialog
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))
       ],
     );
   }
 }
+

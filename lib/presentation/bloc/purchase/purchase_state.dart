@@ -44,3 +44,5 @@ class PurchaseError extends PurchaseState {
   @override
   List<Object> get props => [message];
 }
+
+class PurchaseCancelled extends PurchaseState {}
