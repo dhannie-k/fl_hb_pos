@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pdf/pdf.dart';
 import '../../../domain/entities/inventory.dart';
 import '../../bloc/inventory/inventory_bloc.dart';
 import '../../bloc/inventory/inventory_state.dart';
 import '../../bloc/inventory/inventory_event.dart';
 import '../../pages/inventory_item_detail_page.dart';
 import '../../router/route_paths.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class StockTab extends StatefulWidget {
   const StockTab({super.key});
@@ -172,6 +175,23 @@ class _StockTabState extends State<StockTab> {
               const Text(
                 "Inventory Stock",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              isMobile? SizedBox.shrink() : IconButton(
+                icon: const Icon(Icons.print_outlined),
+                tooltip: 'Print Stock Cards',
+                onPressed: () {
+                  if (_filteredItems.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('No items to print.'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return;
+                  }
+                  // This will print cards for all items currently displayed (respecting the search filter)
+                  _showRowCountDialog(context, _filteredItems);
+                },
               ),
               isMobile
                   ? IconButton(
@@ -345,7 +365,10 @@ class _StockTabState extends State<StockTab> {
                   _showAdjustStockDialog(item);
                   break;
                 case 'movements':
-                  context.push('/inventory/items/${item.itemId}/movements', extra: item);
+                  context.push(
+                    '/inventory/items/${item.itemId}/movements',
+                    extra: item,
+                  );
                   /* context.push(
                     RoutePaths.inventoryItemMovements.replaceFirst(
                       ':id',
@@ -435,4 +458,160 @@ class _ProductGroup {
     this.categoryName,
     required this.items,
   });
+}
+
+Future<void> _showRowCountDialog(
+  BuildContext context,
+  List<InventoryItem> items,
+) async {
+  final rowCountController = TextEditingController(text: '20');
+
+  return showDialog<void>(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Set Empty Rows'),
+        content: TextField(
+          controller: rowCountController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Number of empty rows per card',
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+          ElevatedButton(
+            child: const Text('Generate PDF'),
+            onPressed: () {
+              final rowCount = int.tryParse(rowCountController.text) ?? 20;
+              Navigator.of(dialogContext).pop();
+              _generateBlankStockCards(items, rowCount);
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<void> _generateBlankStockCards(
+  List<InventoryItem> items,
+  int rowCount,
+) async {
+  final pdf = pw.Document();
+  const tableHeaders = ['Date', 'Transaction', 'In', 'Out', 'Balance'];
+  final columnWidths = {
+    0: const pw.FlexColumnWidth(2),
+    1: const pw.FlexColumnWidth(4),
+    2: const pw.FlexColumnWidth(1.5),
+    3: const pw.FlexColumnWidth(1.5),
+    4: const pw.FlexColumnWidth(1.5),
+  };
+
+  for (final item in items) {
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a5,
+        margin: const pw.EdgeInsets.symmetric(
+          horizontal: 1.5 * PdfPageFormat.cm,
+          vertical: 1.0 * PdfPageFormat.cm,
+        ),
+        build: (pw.Context context) {
+          final headerRow = pw.TableRow(
+            decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+            children: tableHeaders
+                .map(
+                  (h) => pw.Padding(
+                    padding: const pw.EdgeInsets.all(4),
+                    child: pw.Text(
+                      h,
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
+                  ),
+                )
+                .toList(),
+          );
+          final initialBalanceRow = pw.TableRow(
+            children: [
+              pw.SizedBox(height: 20),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(4.0),
+                child: pw.Text('Current Balance'),
+              ),
+              pw.SizedBox(height: 20),
+              pw.SizedBox(height: 20),
+              pw.Container(
+                alignment: pw.Alignment.centerRight,
+                padding: const pw.EdgeInsets.all(4.0),
+                child: pw.Text(
+                  item.stock.toStringAsFixed(0),
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+            ],
+          );
+          final emptyRows = List.generate(
+            rowCount > 0 ? rowCount - 1 : 0,
+            (i) => pw.TableRow(
+              children: List.generate(
+                tableHeaders.length,
+                (_) => pw.SizedBox(height: 20),
+              ),
+            ),
+          );
+
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.black),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      item.productName,
+                      style: pw.TextStyle(
+                        fontSize: 20,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Text(
+                      '${item.brand ?? ''} / ${item.specification} / ${item.color ?? 'N/A'}',
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Align(
+                      alignment: pw.Alignment.centerRight,
+                      child: pw.Text(
+                        'UoM: ${item.unitOfMeasure}',
+                        style: pw.TextStyle(
+                          fontStyle: pw.FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 12),
+              pw.Table(
+                border: pw.TableBorder.all(),
+                columnWidths: columnWidths,
+                children: [headerRow, initialBalanceRow, ...emptyRows],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+  await Printing.layoutPdf(
+    onLayout: (PdfPageFormat format) async => pdf.save(),
+  );
 }

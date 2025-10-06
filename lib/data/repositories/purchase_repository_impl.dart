@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/purchase.dart';
 import '../../domain/repositories/purchase_repository.dart';
@@ -67,7 +69,8 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
       final data = response as List<dynamic>;
       return data.map((json) => Purchase.fromMap(json)).toList();
     } catch (e) {
-      print('Error during purchase mapping: $e');
+      //print('Error during purchase mapping: $e');
+      dev.log('Error during purchase mapping: $e');
       throw Exception('Failed to fetch purchases: $e');
     }
   }

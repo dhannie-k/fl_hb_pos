@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hb_pos_inv/domain/entities/inventory.dart';
+import 'package:hb_pos_inv/domain/entities/product.dart';
+import 'package:hb_pos_inv/domain/repositories/product_service.dart';
 import 'package:hb_pos_inv/presentation/router/route_paths.dart';
 import '../bloc/product/product_bloc.dart';
 import '../bloc/product/product_state.dart';
 import '../bloc/product/product_event.dart';
 import '../widgets/common/loading_widget.dart';
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class ProductDetailPage extends StatefulWidget {
   final int productId;
@@ -27,7 +32,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Product Details')),
+      appBar: AppBar(
+        title: const Text('Product Details'),        
+      ),
       body: BlocBuilder<ProductBloc, ProductState>(
         builder: (context, state) {
           if (state is ProductLoading) {
@@ -137,7 +144,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     context.push(
                                       RoutePaths.productEditItem,
                                       extra: item,
-                                    );                                    
+                                    );
                                     break;
                                   case 'movements':
                                     context.push(
@@ -154,6 +161,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     break;
                                   case 'adjust':
                                     // maybe reuse your stock adjust dialog
+                                    break;
+                                  case 'stock_card':
+                                    _generateStockCard(context, product, item);
                                     break;
                                 }
                               },
@@ -188,6 +198,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     ],
                                   ),
                                 ),
+                                const PopupMenuItem(
+                                  value: 'stock_card',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.tune, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('print stock card'),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -213,3 +233,80 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 }
+
+Future<void> _generateStockCard(
+  BuildContext context,
+  ProductDisplayItem product,
+  ProductItem item,
+) async {
+  final pdf = pw.Document();
+
+  pdf.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat.a5,
+      build: (pw.Context context) {
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            // Card Header
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.black, width: 2),
+                borderRadius: pw.BorderRadius.circular(8),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    product.name,
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Text(
+                    '${product.brand ?? ''} ${item.specification} ${item.color ?? ''}',
+                    style: const pw.TextStyle(fontSize: 16),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    'Unit of Measure: ${item.unitOfMeasure}',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontStyle: pw.FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 20),
+
+            // Stock Table Header
+            pw.TableHelper.fromTextArray(
+              headers: ['Date', 'Transaction', 'In', 'Out', 'Balance'],
+              data: [
+                // This is where you would loop through your stock movements for this item
+                // For now, here is some sample data
+                ['2023-10-26', 'Initial Stock', '10', '', '10'],
+                ['2023-10-27', 'Sale #123', '', '2', '8'],
+                ['2023-10-28', 'Purchase #456', '5', '', '13'],
+              ],
+              border: pw.TableBorder.all(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              cellAlignment: pw.Alignment.center,
+              cellStyle: const pw.TextStyle(fontSize: 12),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+
+  // Print the PDF
+  await Printing.layoutPdf(
+    onLayout: (PdfPageFormat format) async => pdf.save(),
+  );
+}
+
