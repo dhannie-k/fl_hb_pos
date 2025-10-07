@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hb_pos_inv/domain/entities/supplier.dart';
+import 'package:hb_pos_inv/presentation/bloc/supplier/supplier_bloc.dart';
 import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:hb_pos_inv/domain/entities/inventory.dart';
 import 'package:hb_pos_inv/presentation/bloc/inventory/inventory_bloc.dart';
@@ -39,7 +41,9 @@ class AddPurchasePage extends StatefulWidget {
 class _AddPurchasePageState extends State<AddPurchasePage> {
   final _formKey = GlobalKey<FormState>();
   final _poNumberController = TextEditingController();
-  final _supplierIdController = TextEditingController();
+  final _supplierNameController = TextEditingController();
+  Supplier? _selectedSupplier;
+  //final _supplierIdController = TextEditingController();
   DateTime _purchaseDate = DateTime.now(); // State for the selected date
   PaymentMethod _paymentMethod = PaymentMethod.cash;
   final List<PurchaseItem> _items = [];
@@ -48,7 +52,8 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
   @override
   void dispose() {
     _poNumberController.dispose();
-    _supplierIdController.dispose();
+    //_supplierIdController.dispose();
+    _supplierNameController.dispose();
     super.dispose();
   }
 
@@ -87,7 +92,7 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
       poNumber: _poNumberController.text.trim().isEmpty
           ? null
           : _poNumberController.text.trim(),
-      supplierId: int.tryParse(_supplierIdController.text.trim()),
+      supplierId: _selectedSupplier!.id, //int.tryParse(_supplierIdController.text.trim()),
       purchaseDate: _purchaseDate, // Use the selected date
       totalAmount: totalAmount,
       paymentMethod: _paymentMethod,
@@ -95,6 +100,26 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
     );
 
     context.read<PurchaseBloc>().add(AddPurchase(newPurchase));
+  }
+
+  void _showSupplierSearchDialog() async {
+    // Show the search dialog and wait for it to return a Supplier
+    final supplier = await showDialog<Supplier>(
+      context: context,
+      builder: (_) => BlocProvider.value(
+        // Provide the existing SupplierBloc to the dialog
+        value: context.read<SupplierBloc>()..add(LoadSuppliers()),
+        child: const _SupplierSearchDialog(),
+      ),
+    );
+
+    // If a supplier was selected or created, update the state
+    if (supplier != null) {
+      setState(() {
+        _selectedSupplier = supplier;
+        _supplierNameController.text = supplier.name;
+      });
+    }
   }
 
   void _showAddItemDialog() async {
@@ -238,15 +263,20 @@ class _AddPurchasePageState extends State<AddPurchasePage> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller: _supplierIdController,
+                  controller: _supplierNameController,
                   decoration: const InputDecoration(
-                    labelText: 'Supplier ID*',
-                    hintText: 'Enter the supplier\'s ID',
+                    labelText: 'Supplier*',
+                    hintText: 'Tap to Search for a supplier',
+                    suffixIcon: Icon(Icons.search),
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (val) => (val == null || val.isEmpty || int.tryParse(val) == null)
-                      ? 'Supplier ID is required'
-                      : null,
+                  onTap: _showSupplierSearchDialog,
+                  //keyboardType: TextInputType.number,
+                  validator: (val) {
+                    if(_selectedSupplier == null){
+                      return 'Please selec a supplier';
+                    }
+                    return null;
+                  }
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<PaymentMethod>(
@@ -392,8 +422,8 @@ class __ProductSearchDialogState extends State<_ProductSearchDialog> {
                       itemBuilder: (context, index) {
                         final item = searchResults[index];
                         return ListTile(
-                          title: Text(item.productName),
-                          subtitle: Text(item.specification),
+                          title: Text('${item.productName} ${item.brand ?? ''}'),
+                          subtitle: Text('${item.specification} ${item.color ??''}'),
                           onTap: () => Navigator.of(context).pop(item),
                         );
                       },
@@ -409,6 +439,139 @@ class __ProductSearchDialogState extends State<_ProductSearchDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))
       ],
+    );
+  }
+}
+
+// ===== DIALOG FOR SUPPLIER SEARCH AND CREATION =====
+class _SupplierSearchDialog extends StatefulWidget {
+  const _SupplierSearchDialog();
+
+  @override
+  State<_SupplierSearchDialog> createState() => __SupplierSearchDialogState();
+}
+
+class __SupplierSearchDialogState extends State<_SupplierSearchDialog> {
+  final _debouncer = _Debouncer(milliseconds: 500);
+  String _currentQuery = '';
+
+  void _addNewSupplier(String name) async {
+    final newSupplier = await showDialog<Supplier>(
+      context: context,
+      builder: (dialogContext) => _AddSupplierDialog(
+        initialName: name,
+        // Pass the BLoC instance to the new dialog
+        bloc: context.read<SupplierBloc>(),
+      ),
+    );
+
+    // If the add dialog returns a new supplier, pop the search dialog with that supplier
+    if (newSupplier != null && mounted) {
+      Navigator.of(context).pop(newSupplier);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Search Supplier'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              autofocus: true,
+              decoration: const InputDecoration(hintText: 'Type supplier name...'),
+              onChanged: (query) {
+                _currentQuery = query.trim();
+                _debouncer.run(() {
+                  if (_currentQuery.isNotEmpty) {
+                    context.read<SupplierBloc>().add(SearchSuppliers(_currentQuery));
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: BlocBuilder<SupplierBloc, SupplierState>(
+                builder: (context, state) {
+                  if (state is SuppliersLoaded && state.searchResults != null) {
+                    final results = state.searchResults!;
+                    if (results.isEmpty && _currentQuery.isNotEmpty) {
+                      return Center(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.add),
+                          label: Text("Create '$_currentQuery'"),
+                          onPressed: () => _addNewSupplier(_currentQuery),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: results.length,
+                      itemBuilder: (context, index) {
+                        final supplier = results[index];
+                        return ListTile(
+                          title: Text(supplier.name),
+                          onTap: () => Navigator.of(context).pop(supplier),
+                        );
+                      },
+                    );
+                  }
+                  return const Center(child: Text('Start typing to search.'));
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))
+      ],
+    );
+  }
+}
+
+// ===== DIALOG FOR QUICKLY ADDING A NEW SUPPLIER =====
+class _AddSupplierDialog extends StatelessWidget {
+  final String initialName;
+  final SupplierBloc bloc;
+  const _AddSupplierDialog({required this.initialName, required this.bloc});
+
+  @override
+  Widget build(BuildContext context) {
+    final nameController = TextEditingController(text: initialName);
+    
+    return BlocListener<SupplierBloc, SupplierState>(
+      bloc: bloc,
+      listener: (context, state) {
+        // Listen for the specific success state that carries the new supplier
+        if (state is SupplierOperationSuccess && state.newSupplier != null) {
+          // When the BLoC confirms success, pop this dialog and return the new data
+          Navigator.of(context).pop(state.newSupplier);
+        }
+      },
+      child: AlertDialog(
+        title: const Text('Add New Supplier'),
+        content: TextFormField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Supplier Name*'),
+          // You could add more fields here (address, phone) if desired
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.trim().isNotEmpty) {
+                // Dispatch the event to add the supplier
+                bloc.add(AddSupplier(name: nameController.text.trim()));
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 }

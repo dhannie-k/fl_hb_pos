@@ -9,6 +9,7 @@ import 'package:hb_pos_inv/presentation/pages/edit_product_item_page.dart';
 import 'package:hb_pos_inv/presentation/pages/product_detail_page.dart';
 import 'package:hb_pos_inv/presentation/pages/purchase_item_details_page.dart';
 import 'package:hb_pos_inv/presentation/pages/purchases_page.dart';
+import 'package:hb_pos_inv/presentation/pages/supplier_page.dart';
 import '../pages/main_layout.dart';
 import '../pages/dashboard_page.dart';
 import '../pages/inventory_page.dart';
@@ -135,6 +136,14 @@ class AppRouter {
             path: RoutePaths.purchaseAdd,
             name: RouteNames.addPurchase, // Optional: Give it a name
             builder: (context, state) => const AddPurchasePage(),
+          ),
+          GoRoute(
+            path: RoutePaths.suppliers,
+            name: RouteNames.suppliers,
+            pageBuilder: (context, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const SuppliersPage(),
+            ),
           ),
         ],
       ),

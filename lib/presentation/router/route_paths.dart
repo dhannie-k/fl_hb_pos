@@ -21,9 +21,14 @@ class RoutePaths {
   static const String purchaseItemDetails = '/purchases/purchase-item-details';
   static const String purchaseAdd = '/purchases/add';
 
+  // supplier
+  static const String suppliers = '/suppliers';
+
   // Other modules
   static const String sales = '/sales';
   static const String customers = '/customers';
   static const String reports = '/reports';
   static const String settings = '/settings';
+
+
 }

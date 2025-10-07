@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hb_pos_inv/data/repositories/purchase_repository_impl.dart';
+import 'package:hb_pos_inv/data/repositories/supplier_repository_impl.dart';
+import 'package:hb_pos_inv/domain/repositories/category_repository.dart';
+import 'package:hb_pos_inv/domain/repositories/dashboard_repository.dart';
+import 'package:hb_pos_inv/domain/repositories/inventory_repository.dart';
+import 'package:hb_pos_inv/domain/repositories/product_repository.dart';
 import 'package:hb_pos_inv/domain/repositories/purchase_repository.dart';
+import 'package:hb_pos_inv/domain/repositories/supplier_repository.dart';
 import 'package:hb_pos_inv/presentation/bloc/purchase/purchase_bloc.dart';
+import 'package:hb_pos_inv/presentation/bloc/supplier/supplier_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/supabase_config.dart';
 import 'core/constans/app_colors.dart';
@@ -98,44 +105,65 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Create datasource instance
-    final supabaseDatasource = SupabaseDatasource();
-    //final SupabaseClient client = Supabase.instance.client;
-    final productRepository = ProductRepositoryImpl(supabaseDatasource);
-    final inventoryRepository = InventoryRepositoryImpl(supabaseDatasource);
-    final productService = ProductService(productRepository);
+    // --- Centralized Dependency Injection ---
 
+    // 1. Provide all data layer repositories first.
     return MultiRepositoryProvider(
       providers: [
-        // You can provide simpler repositories directly
+        RepositoryProvider(create: (context) => SupabaseDatasource()),
         RepositoryProvider<PurchaseRepository>(
-          create: (context) => PurchaseRepositoryImpl(supabase),
+            create: (context) => PurchaseRepositoryImpl(supabase)),
+        RepositoryProvider<SupplierRepository>(
+            create: (context) => SupplierRepositoryImpl(supabase)),
+        RepositoryProvider<DashboardRepository>(
+          create: (context) =>
+              DashboardRepositoryImpl(context.read<SupabaseDatasource>()),
         ),
-        // Keep providing others as needed
+        RepositoryProvider<CategoryRepository>(
+          create: (context) =>
+              CategoryRepositoryImpl(context.read<SupabaseDatasource>()),
+        ),
+        RepositoryProvider<ProductRepository>(
+          create: (context) =>
+              ProductRepositoryImpl(context.read<SupabaseDatasource>()),
+        ),
+        RepositoryProvider<InventoryRepository>(
+          create: (context) =>
+              InventoryRepositoryImpl(context.read<SupabaseDatasource>()),
+        ),
+        RepositoryProvider<ProductService>(
+          create: (context) =>
+              ProductService(context.read<ProductRepository>()),
+        ),
       ],
-      // MultiBlocProvider consumes the repositories provided above
+      // 2. Provide all BLoCs, which can now access any repository from above.
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (context) => DashboardBloc(
-              DashboardService(DashboardRepositoryImpl(supabaseDatasource)),
-            )..add(LoadDashboard()),
+            create: (context) =>
+                DashboardBloc(DashboardService(context.read<DashboardRepository>()))
+                  ..add(LoadDashboard()),
           ),
           BlocProvider(
             create: (context) =>
-                CategoryBloc(CategoryRepositoryImpl(supabaseDatasource)),
-          ),
-          BlocProvider(
-            create: (context) => ProductBloc(productService: productService),
+                CategoryBloc(context.read<CategoryRepository>()),
           ),
           BlocProvider(
             create: (context) =>
-                InventoryBloc(inventoryRepository)..add(const LoadInventory()),
+                ProductBloc(productService: context.read<ProductService>()),
           ),
-          // Add the PurchaseBloc here, it can now find PurchaseRepository
+          BlocProvider(
+            create: (context) =>
+                InventoryBloc(context.read<InventoryRepository>())
+                  ..add(const LoadInventory()),
+          ),
           BlocProvider(
             create: (context) =>
                 PurchaseBloc(context.read<PurchaseRepository>()),
+          ),
+          BlocProvider(
+            create: (context) =>
+                SupplierBloc(context.read<SupplierRepository>()),
           ),
         ],
         child: MaterialApp.router(
@@ -169,7 +197,8 @@ class MyApp extends StatelessWidget {
             ),
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -201,7 +230,7 @@ class MyApp extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: AppColors.error, width: 2),
               ),
-              contentPadding: EdgeInsets.symmetric(
+              contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,
               ),

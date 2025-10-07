@@ -12,7 +12,7 @@ class Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
     final currentLocation = GoRouterState.of(context).uri.toString();
-    
+
     if (isMobile) {
       // Mobile drawer
       return Drawer(
@@ -37,7 +37,11 @@ class Sidebar extends StatelessWidget {
     }
   }
 
-  Widget _buildSidebarContent(BuildContext context, String currentLocation, bool isMobile) {
+  Widget _buildSidebarContent(
+    BuildContext context,
+    String currentLocation,
+    bool isMobile,
+  ) {
     return Column(
       children: [
         // Header section
@@ -45,7 +49,9 @@ class Sidebar extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isMobile ? Theme.of(context).primaryColor : const Color(0xFF364A63),
+            color: isMobile
+                ? Theme.of(context).primaryColor
+                : const Color(0xFF364A63),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,11 +63,7 @@ class Sidebar extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.store,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                child: const Icon(Icons.store, color: Colors.white, size: 24),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -75,7 +77,7 @@ class Sidebar extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Navigation items
         Expanded(
           child: Container(
@@ -123,6 +125,15 @@ class Sidebar extends StatelessWidget {
                   isActive: currentLocation.startsWith('/purchases'),
                   isMobile: isMobile,
                 ),
+                // Example in sidebar.dart
+                _buildNavItem(
+                  context,
+                  icon: Icons.store, // Or another suitable icon
+                  title: 'Suppliers',
+                  path: RoutePaths.suppliers,
+                  isActive: currentLocation.startsWith('/suppliers'),
+                  isMobile: isMobile,
+                ),
                 const Divider(color: Colors.white24, height: 32),
                 _buildNavItem(
                   context,
@@ -132,11 +143,13 @@ class Sidebar extends StatelessWidget {
                   isActive: currentLocation.startsWith('/settings'),
                   isMobile: isMobile,
                 ),
-                SizedBox(height: 12,),
-                IconButton(onPressed: () {
-                  context.read<AuthBloc>().add(AuthSignOutRequested());
-                  
-                }, icon: Icon(Icons.logout_outlined))
+                SizedBox(height: 12),
+                IconButton(
+                  onPressed: () {
+                    context.read<AuthBloc>().add(AuthSignOutRequested());
+                  },
+                  icon: Icon(Icons.logout_outlined),
+                ),
               ],
             ),
           ),
@@ -153,15 +166,19 @@ class Sidebar extends StatelessWidget {
     required bool isActive,
     required bool isMobile,
   }) {
-    final Color activeColor = isMobile ? Theme.of(context).primaryColor : Colors.white;
+    final Color activeColor = isMobile
+        ? Theme.of(context).primaryColor
+        : Colors.white;
     final Color? inactiveColor = isMobile ? null : Colors.white70;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: isActive 
-            ? (isMobile ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.1))
+        color: isActive
+            ? (isMobile
+                  ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.1))
             : null,
       ),
       child: ListTile(
