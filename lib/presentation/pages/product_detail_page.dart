@@ -32,202 +32,242 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Product Details'),        
-      ),
       body: BlocBuilder<ProductBloc, ProductState>(
         builder: (context, state) {
-          if (state is ProductLoading) {
-            return const LoadingWidget();
-          } else if (state is ProductDisplayDetailLoaded) {
-            final product = state.product;
-            final items = state.product.items;
+          final String appBarTitle = (state is ProductDisplayDetailLoaded)
+              ? state.product.name
+              : 'Product Details';
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Product header card
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (product.imageUrl != null &&
-                              product.imageUrl!.isNotEmpty)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                product.imageUrl!,
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          else
-                            Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.image_not_supported),
-                            ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.name,
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                                if (product.brand != null)
-                                  Text(
-                                    product.brand!,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                  ),
-                                if (product.description != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Text(product.description!),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+          final ProductDisplayItem? productForAction =
+              (state is ProductDisplayDetailLoaded) ? state.product : null;
 
-                  Text(
-                    'Product Items',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Items list
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: items.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      return ListTile(
-                        title: Text(
-                          '${item.specification} ${item.color ?? ''}',
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(appBarTitle),
+              actions: [
+                if (productForAction != null)
+                  IconButton(
+                    icon: Icon(Icons.add_box_outlined),
+                    tooltip: 'add new item',
+                    onPressed: () {
+                      context.push(
+                        RoutePaths.productAddItem.replaceFirst(
+                          ':id',
+                          widget.productId.toString(),
                         ),
-                        subtitle: Text('Unit: ${item.unitOfMeasure}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              item.unitPrice != null
-                                  ? 'Rp${item.unitPrice!.toStringAsFixed(2)}'
-                                  : '-',
-                            ),
-                            PopupMenuButton<String>(
-                              onSelected: (value) {
-                                switch (value) {
-                                  case 'edit':
-                                    context.push(
-                                      RoutePaths.productEditItem,
-                                      extra: item,
-                                    );
-                                    break;
-                                  case 'movements':
-                                    context.push(
-                                      '/inventory/items/${item.id}/movements',
-                                      extra: InventoryItem(
-                                        productId: item.productId,
-                                        productName: product.name,
-                                        itemId: item.id!,
-                                        specification: item.specification,
-                                        unitOfMeasure: item.unitOfMeasure,
-                                        stock: 0.0,
-                                      ),
-                                    );
-                                    break;
-                                  case 'adjust':
-                                    // maybe reuse your stock adjust dialog
-                                    break;
-                                  case 'stock_card':
-                                    _generateStockCard(context, product, item);
-                                    break;
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit, size: 16),
-                                      SizedBox(width: 8),
-                                      Text('Edit Item'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'movements',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.history, size: 16),
-                                      SizedBox(width: 8),
-                                      Text('View Movements'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'adjust',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.tune, size: 16),
-                                      SizedBox(width: 8),
-                                      Text('Quick Adjustment'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'stock_card',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.tune, size: 16),
-                                      SizedBox(width: 8),
-                                      Text('print stock card'),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                        extra: productForAction,
                       );
                     },
                   ),
-                ],
-              ),
-            );
-          } else if (state is ProductError) {
-            return Center(
-              child: Text(
-                state.message,
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          }
+              ],
+            ),
+            body: Builder(
+              builder: (context) {
+                if (state is ProductLoading) {
+                  return const LoadingWidget();
+                } else if (state is ProductDisplayDetailLoaded) {
+                  final product = state.product;
+                  final items = state.product.items;
 
-          return const SizedBox.shrink();
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Product header card
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (product.imageUrl != null &&
+                                    product.imageUrl!.isNotEmpty)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      product.imageUrl!,
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    width: 100,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                    ),
+                                  ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.name,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleLarge,
+                                      ),
+                                      if (product.brand != null)
+                                        Text(
+                                          product.brand!,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium,
+                                        ),
+                                      if (product.description != null)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 8.0,
+                                          ),
+                                          child: Text(product.description!),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        Text(
+                          'Product Items',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Items list
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: items.length,
+                          separatorBuilder: (_, _) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final item = items[index];
+                            return ListTile(
+                              title: Text(
+                                '${item.specification} ${item.color ?? ''}',
+                              ),
+                              subtitle: Text('Unit: ${item.unitOfMeasure}'),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    item.unitPrice != null
+                                        ? 'Rp${item.unitPrice!.toStringAsFixed(2)}'
+                                        : '-',
+                                  ),
+                                  PopupMenuButton<String>(
+                                    onSelected: (value) {
+                                      switch (value) {
+                                        case 'edit':
+                                          context.push(
+                                            RoutePaths.productEditItem,
+                                            extra: item,
+                                          );
+                                          break;
+                                        case 'movements':
+                                          context.push(
+                                            '/inventory/items/${item.id}/movements',
+                                            extra: InventoryItem(
+                                              productId: item.productId,
+                                              productName: product.name,
+                                              itemId: item.id!,
+                                              specification: item.specification,
+                                              unitOfMeasure: item.unitOfMeasure,
+                                              stock: 0.0,
+                                            ),
+                                          );
+                                          break;
+                                        case 'adjust':
+                                          // maybe reuse your stock adjust dialog
+                                          break;
+                                        case 'stock_card':
+                                          _generateStockCard(
+                                            context,
+                                            product,
+                                            item,
+                                          );
+                                          break;
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit, size: 16),
+                                            SizedBox(width: 8),
+                                            Text('Edit Item'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'movements',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.history, size: 16),
+                                            SizedBox(width: 8),
+                                            Text('View Movements'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'adjust',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.tune, size: 16),
+                                            SizedBox(width: 8),
+                                            Text('Quick Adjustment'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'stock_card',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.tune, size: 16),
+                                            SizedBox(width: 8),
+                                            Text('print stock card'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                } else if (state is ProductError) {
+                  return Center(
+                    child: Text(
+                      state.message,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
+          );
         },
       ),
     );
@@ -309,4 +349,3 @@ Future<void> _generateStockCard(
     onLayout: (PdfPageFormat format) async => pdf.save(),
   );
 }
-
