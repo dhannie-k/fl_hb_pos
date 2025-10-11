@@ -1,0 +1,12 @@
+icons_launcher:
+  image_path: 'assets/hb_launcher.png'
+  platforms:
+    android:
+      enable: true
+      image_path: 'assets/hb_launcher.png'
+      adaptive_background_color: '#ffffff'
+      adaptive_foreground_image: 'assets/hb_launcher.png'
+      adaptive_round_image: 'assets/hb_launcher.png'
+      adaptive_monochrome_image: 'assets/hb_launcher.png'
+    ios:
+      enable: true
