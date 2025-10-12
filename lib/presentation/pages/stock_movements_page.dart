@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constans/app_colors.dart';
 import '../bloc/stock_movements/stock_movements_bloc.dart';
 import '../bloc/stock_movements/stock_movements_event.dart';
@@ -77,6 +78,7 @@ class _StockMovementsBody extends StatelessWidget {
   }
 
   Widget _buildMovementTile(StockMovement movement) {
+    final dateFormat = DateFormat('dd-MMM-yyyy HH:mm');
     final isIn = movement.direction.toLowerCase() == "in";
     final qtyColor = isIn ? Colors.green : Colors.red;
     final qtyPrefix = isIn ? "+" : "";
@@ -102,7 +104,7 @@ class _StockMovementsBody extends StatelessWidget {
             ),
           const SizedBox(height: 2),
           Text(
-            "${movement.timestamp} • ${movement.note ?? ''}",
+            "${dateFormat.format(movement.timestamp.toLocal())} • ${movement.note ?? ''}",
             style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
         ],
